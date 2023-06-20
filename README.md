@@ -2,6 +2,8 @@
 
 **This is a fork of the original TinyCD repository for use in my master's dissertation project. Edits are primarily intended for improving utility for my own work.**
 
+Original README below:
+----
 
 This is the implementation of: TinyCD: A (Not So) Deep Learning Model For Change Detection
 
