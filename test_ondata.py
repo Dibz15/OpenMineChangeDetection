@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from metrics.metric_tool import ConfuseMatrixMeter
 from models.change_classifier import ChangeClassifier
 import argparse
+from torchvision.models import EfficientNet_B4_Weights
 
 def parse_arguments():
     # Argument Parser creation
@@ -31,6 +32,10 @@ if __name__ == "__main__":
 
     # Parse arguments:
     args = parse_arguments()
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
 
     # tool for metrics
     tool_metric = ConfuseMatrixMeter(n_class=2)
@@ -43,7 +48,7 @@ if __name__ == "__main__":
     # Initialisation of the model and print model stat
     model = ChangeClassifier()
     modelpath = args.modelpath
-    model.load_state_dict(torch.load(modelpath))
+    model.load_state_dict(torch.load(modelpath, map_location=device))
 
     # Print the number of model parameters 
     param_tot = sum(p.numel() for p in model.parameters())

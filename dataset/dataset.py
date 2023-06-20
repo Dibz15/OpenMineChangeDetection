@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from collections import Sized
+from collections.abc import Sized
 from os.path import join
 import albumentations as alb
 from torchvision.transforms import Normalize

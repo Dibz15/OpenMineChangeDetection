@@ -3,7 +3,7 @@ import torchvision
 from models.layers import MixingMaskAttentionBlock, PixelwiseLinear, UpMask, MixingBlock
 from torch import Tensor
 from torch.nn import Module, ModuleList, Sigmoid
-
+from torchvision.models import EfficientNet_B4_Weights
 
 class ChangeClassifier(Module):
     def __init__(
@@ -67,7 +67,7 @@ def _get_backbone(
 ) -> ModuleList:
     # The whole model:
     entire_model = getattr(torchvision.models, bkbn_name)(
-        pretrained=pretrained
+        weights=EfficientNet_B4_Weights.IMAGENET1K_V1 if pretrained else None
     ).features
 
     # Slicing it:
