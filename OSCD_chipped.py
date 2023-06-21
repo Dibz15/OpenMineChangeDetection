@@ -15,7 +15,8 @@ from matplotlib.figure import Figure
 from PIL import Image
 from torch import Tensor
 
-from torchgeo.datasets.geo import NonGeoDataset
+from torchgeo.datasets import NonGeoDataset
+from torchgeo.datasets import OSCD
 from torchgeo.datasets.utils import (
     download_url,
     draw_semantic_segmentation_masks,
@@ -23,60 +24,10 @@ from torchgeo.datasets.utils import (
     sort_sentinel2_bands,
 )
 
-class OSCD_Chipped(NonGeoDataset):
-    """OSCD dataset.
+from functools import reduce
+import operator
 
-    The `Onera Satellite Change Detection <https://rcdaudt.github.io/oscd/>`_
-    dataset addresses the issue of detecting changes between
-    satellite images from different dates. Imagery comes from
-    Sentinel-2 which contains varying resolutions per band.
-
-    Dataset format:
-
-    * images are 13-channel tifs
-    * masks are single-channel pngs where no change = 0, change = 255
-
-    Dataset classes:
-
-    0. no change
-    1. change
-
-    If you use this dataset in your research, please cite the following paper:
-
-    * https://doi.org/10.1109/IGARSS.2018.8518015
-
-    .. versionadded:: 0.2
-    """
-
-    urls = {
-        "Onera Satellite Change Detection dataset - Images.zip": (
-            "https://partage.imt.fr/index.php/s/gKRaWgRnLMfwMGo/download"
-        ),
-        "Onera Satellite Change Detection dataset - Train Labels.zip": (
-            "https://partage.mines-telecom.fr/index.php/s/2D6n03k58ygBSpu/download"
-        ),
-        "Onera Satellite Change Detection dataset - Test Labels.zip": (
-            "https://partage.imt.fr/index.php/s/gpStKn4Mpgfnr63/download"
-        ),
-    }
-    md5s = {
-        "Onera Satellite Change Detection dataset - Images.zip": (
-            "c50d4a2941da64e03a47ac4dec63d915"
-        ),
-        "Onera Satellite Change Detection dataset - Train Labels.zip": (
-            "4d2965af8170c705ebad3d6ee71b6990"
-        ),
-        "Onera Satellite Change Detection dataset - Test Labels.zip": (
-            "8177d437793c522653c442aa4e66c617"
-        ),
-    }
-
-    zipfile_glob = "*Onera*.zip"
-    filename_glob = "*Onera*"
-    splits = ["train", "test"]
-
-    colormap = ["blue"]
-
+class OSCD_Chipped(OSCD):
     def __init__(
         self,
         root: str = "data",
@@ -85,59 +36,104 @@ class OSCD_Chipped(NonGeoDataset):
         transforms: Optional[Callable[[dict[str, Tensor]], dict[str, Tensor]]] = None,
         download: bool = False,
         checksum: bool = False,
+        stride: int = 128
     ) -> None:
-        """Initialize a new OSCD dataset instance.
+        super().__init__(root, split, bands, transforms, download, checksum)
+        self.stride = stride
+        self.total_dataset_length, self.chip_index_map, self.image_shapes_map = self._calculate_dataset_len()
 
-        Args:
-            root: root directory where dataset can be found
-            split: one of "train" or "test"
-            transforms: a function/transform that takes input sample and its target as
-                entry and returns a transformed version
-            download: if True, download dataset and store it in the root directory
-            checksum: if True, check the MD5 of the downloaded files (may be slow)
-
-        Raises:
-            AssertionError: if ``split`` argument is invalid
-            RuntimeError: if ``download=False`` and data is not found, or checksums
-                don't match
-        """
-        assert split in self.splits
-        assert bands in ["rgb", "all"]
-
-        self.root = root
-        self.split = split
-        self.bands = bands
-        self.transforms = transforms
-        self.download = download
-        self.checksum = checksum
-
-        self._verify()
-
-        self.files = self._load_files()
-
-
-    def __getitem__(self, index: int) -> dict[str, Tensor]:
-        """Return an index within the dataset.
-
-        Args:
-            index: index to return
-
-        Returns:
-            data and label at that index
-        """
+    def _load_raw_index(self, index: int):
         files = self.files[index]
         image1 = self._load_image(files["images1"])
         image2 = self._load_image(files["images2"])
         mask = self._load_target(str(files["mask"]))
+        return image1, image2, mask
 
-        image = torch.cat([image1, image2])
-        sample = {"image": image, "mask": mask}
+    def _load_tensor_index(self, index: int):
+        image1, image2, mask = self._load_raw_index(index)
+        image1_tensor = torch.from_numpy(image1)
+        image2_tensor = torch.from_numpy(image2)
+        mask_tensor = torch.from_numpy(mask).to(torch.long)
+        raw_img_tensor = torch.cat([image1_tensor, image2_tensor])
+        return raw_img_tensor, mask_tensor
+
+    def _calculate_dataset_len(self):
+      """Returns the total length (number of chips) of the dataset
+          This is the total number of tiles after tiling every high-res image
+          in the dataset and calculating the tiling using the tiler.
+
+          This function also creates and returns a dictionary that maps from the
+          chipped dataset index to the original file index.
+
+      Returns:
+          - Length of the dataset in number of chips
+          - Index map (key is the chip index, value is a tuple of (file index, chip index relative to the last file))
+          - Map of image shapes
+      """
+      total_tiles = 0
+      index_map = {}
+      image_shapes = {}
+
+      for i in range(len(self.files)):
+          files = self.files[i]
+          image1 = self._load_image(files["images1"])
+          image1_tensor = torch.from_numpy(image1)
+          raw_img_tensor = torch.cat([image1_tensor, image1_tensor])
+          
+          tiler = Tiler(data_shape=raw_img_tensor.shape,
+                tile_shape=(raw_img_tensor.shape[0], 256, 256),
+                overlap=max(256 - self.stride, 0),
+                mode="drop",
+                channel_dimension=0)
+          
+          image_shapes[i] = list(raw_img_tensor.shape)
+          tile_shape = tiler.get_mosaic_shape(with_channel_dim=True)
+          num_tiles = tile_shape[0] * tile_shape[1] * tile_shape[2]
+          # Map chip index to file index
+          for j in range(total_tiles, total_tiles + num_tiles):
+              index_map[j] = (i, j - total_tiles)
+
+          total_tiles += num_tiles
+
+      return total_tiles, index_map, image_shapes
+
+    def __getitem__(self, chip_index: int) -> dict[str, Tensor]:
+        """Return an index within the dataset.
+
+        Args:
+            chip_index: index to return
+
+        Returns:
+            data and label at that index
+        """
+
+        (file_index, relative_chip_index) = self.chip_index_map[chip_index]
+        full_image_shape = self.image_shapes_map[file_index].copy()
+        full_image_shape[0] = full_image_shape[0] + 1
+        tiler = Tiler(data_shape=full_image_shape,
+              tile_shape=(full_image_shape[0], 256, 256),
+              overlap=max(256 - self.stride, 0),
+              mode="drop",
+              channel_dimension=0)
+
+        # img, mask = self._load_tensor_index(file_index)
+        img1, img2, mask = self._load_raw_index(file_index)
+        mask = np.expand_dims(mask, 0)
+        img_full = np.concatenate((img1, img2, mask))
+        
+        img_mask_tile = tiler.get_tile(img_full, relative_chip_index, copy_data = False)
+
+        img_tile, mask_tile = img_mask_tile[0:full_image_shape[0] - 1, :, :], img_mask_tile[full_image_shape[0] - 1, :, :]
+        img_tile_tensor = torch.from_numpy(img_tile)
+        mask_tile_tensor = torch.from_numpy(mask_tile).to(torch.long)
+
+        # image = torch.cat([image1, image2])
+        sample = {"image": img_tile_tensor, "mask": mask_tile_tensor}
 
         if self.transforms is not None:
-            sample = self.transforms(sample)
+            sample = self.transforms(sample['image'])
 
         return sample
-
 
     def __len__(self) -> int:
         """Return the number of data points in the dataset.
@@ -145,51 +141,7 @@ class OSCD_Chipped(NonGeoDataset):
         Returns:
             length of the dataset
         """
-        return len(self.files)
-
-    def _load_files(self) -> list[dict[str, Union[str, Sequence[str]]]]:
-        regions = []
-        labels_root = os.path.join(
-            self.root,
-            f"Onera Satellite Change Detection dataset - {self.split.capitalize()} "
-            + "Labels",
-        )
-        images_root = os.path.join(
-            self.root, "Onera Satellite Change Detection dataset - Images"
-        )
-        folders = glob.glob(os.path.join(labels_root, "*/"))
-        for folder in folders:
-            region = folder.split(os.sep)[-2]
-            mask = os.path.join(labels_root, region, "cm", "cm.png")
-
-            def get_image_paths(ind: int) -> list[str]:
-                return sorted(
-                    glob.glob(
-                        os.path.join(images_root, region, f"imgs_{ind}_rect", "*.tif")
-                    ),
-                    key=sort_sentinel2_bands,
-                )
-
-            images1, images2 = get_image_paths(1), get_image_paths(2)
-            if self.bands == "rgb":
-                images1, images2 = images1[1:4][::-1], images2[1:4][::-1]
-
-            with open(os.path.join(images_root, region, "dates.txt")) as f:
-                dates = tuple(
-                    line.split()[-1] for line in f.read().strip().splitlines()
-                )
-
-            regions.append(
-                dict(
-                    region=region,
-                    images1=images1,
-                    images2=images2,
-                    mask=mask,
-                    dates=dates,
-                )
-            )
-
-        return regions
+        return self.total_dataset_length
 
     def _load_image(self, paths: Sequence[str]) -> Tensor:
         """Load a single image.
@@ -205,8 +157,7 @@ class OSCD_Chipped(NonGeoDataset):
             with Image.open(path) as img:
                 images.append(np.array(img))
         array: "np.typing.NDArray[np.int_]" = np.stack(images, axis=0).astype(np.int_)
-        tensor = torch.from_numpy(array)
-        return tensor
+        return array
 
     def _load_target(self, path: str) -> Tensor:
         """Load the target mask for a single image.
@@ -220,108 +171,5 @@ class OSCD_Chipped(NonGeoDataset):
         filename = os.path.join(path)
         with Image.open(filename) as img:
             array: "np.typing.NDArray[np.int_]" = np.array(img.convert("L"))
-            tensor = torch.from_numpy(array)
-            tensor = torch.clamp(tensor, min=0, max=1)
-            tensor = tensor.to(torch.long)
-            return tensor
-
-    def _verify(self) -> None:
-        """Verify the integrity of the dataset.
-
-        Raises:
-            RuntimeError: if ``download=False`` but dataset is missing or checksum fails
-        """
-        # Check if the extracted files already exist
-        pathname = os.path.join(self.root, "**", self.filename_glob)
-        for fname in glob.iglob(pathname, recursive=True):
-            if not fname.endswith(".zip"):
-                return
-
-        # Check if the zip files have already been downloaded
-        pathname = os.path.join(self.root, self.zipfile_glob)
-        if glob.glob(pathname):
-            self._extract()
-            return
-
-        # Check if the user requested to download the dataset
-        if not self.download:
-            raise RuntimeError(
-                f"Dataset not found in `root={self.root}` and `download=False`, "
-                "either specify a different `root` directory or use `download=True` "
-                "to automatically download the dataset."
-            )
-
-        # Download the dataset
-        self._download()
-        self._extract()
-
-    def _download(self) -> None:
-        """Download the dataset."""
-        for f_name in self.urls:
-            download_url(
-                self.urls[f_name],
-                self.root,
-                filename=f_name,
-                md5=self.md5s[f_name] if self.checksum else None,
-            )
-
-    def _extract(self) -> None:
-        """Extract the dataset."""
-        pathname = os.path.join(self.root, self.zipfile_glob)
-        for zipfile in glob.iglob(pathname):
-            extract_archive(zipfile)
-
-def plot(
-        self,
-        sample: dict[str, Tensor],
-        show_titles: bool = True,
-        suptitle: Optional[str] = None,
-        alpha: float = 0.5,
-    ) -> Figure:
-        """Plot a sample from the dataset.
-
-        Args:
-            sample: a sample returned by :meth:`__getitem__`
-            show_titles: flag indicating whether to show titles above each panel
-            suptitle: optional string to use as a suptitle
-            alpha: opacity with which to render predictions on top of the imagery
-
-        Returns:
-            a matplotlib Figure with the rendered sample
-        """
-        ncols = 2
-
-        rgb_inds = [3, 2, 1] if self.bands == "all" else [0, 1, 2]
-
-        def get_masked(img: Tensor) -> "np.typing.NDArray[np.uint8]":
-            rgb_img = img[rgb_inds].float().numpy()
-            per02 = np.percentile(rgb_img, 2)
-            per98 = np.percentile(rgb_img, 98)
-            rgb_img = (np.clip((rgb_img - per02) / (per98 - per02), 0, 1) * 255).astype(
-                np.uint8
-            )
-            array: "np.typing.NDArray[np.uint8]" = draw_semantic_segmentation_masks(
-                torch.from_numpy(rgb_img),
-                sample["mask"],
-                alpha=alpha,
-                colors=self.colormap,
-            )
+            array = np.clip(array, a_min=0, a_max=1).astype(np.int_)
             return array
-
-        idx = sample["image"].shape[0] // 2
-        image1 = get_masked(sample["image"][:idx])
-        image2 = get_masked(sample["image"][idx:])
-        fig, axs = plt.subplots(ncols=ncols, figsize=(ncols * 10, 10))
-        axs[0].imshow(image1)
-        axs[0].axis("off")
-        axs[1].imshow(image2)
-        axs[1].axis("off")
-
-        if show_titles:
-            axs[0].set_title("Pre change")
-            axs[1].set_title("Post change")
-
-        if suptitle is not None:
-            plt.suptitle(suptitle)
-
-        return fig
