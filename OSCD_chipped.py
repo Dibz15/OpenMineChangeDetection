@@ -2,32 +2,29 @@
 # Licensed under the MIT License.
 
 """OSCD dataset."""
-
-import glob
-import os
 from collections.abc import Sequence
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, Tuple, List
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from matplotlib.figure import Figure
-from PIL import Image
 from torch import Tensor
+from PIL import Image
+import os
 
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets import OSCD
-from torchgeo.datasets.utils import (
-    download_url,
-    draw_semantic_segmentation_masks,
-    extract_archive,
-    sort_sentinel2_bands,
-)
-
-from functools import reduce
-import operator
+from torchvision.transforms import Normalize
+from .transforms import NormalizeImageDict, NormalizeScale
 
 class OSCD_Chipped(OSCD):
+
+    normalisation_map = {
+        "rgb": ([0.1212, 0.1279, 0.1288], [0.2469, 0.2357, 0.1856]),
+        "all": ([0.1443, 0.1212, 0.1553, 0.1946, 0.1357, 0.0936, 0.1448, 0.1288, 0.1293,
+         0.1907, 0.2039, 0.0324, 0.1620], [0.1377, 0.2469, 0.2937, 0.3299, 0.4074, 0.4604, 0.2402, 0.1856, 0.2878,
+         0.3034, 0.3351, 0.1544, 0.3753])
+    }
+
     def __init__(
         self,
         root: str = "data",
@@ -36,10 +33,23 @@ class OSCD_Chipped(OSCD):
         transforms: Optional[Callable[[dict[str, Tensor]], dict[str, Tensor]]] = None,
         download: bool = False,
         checksum: bool = False,
-        stride: int = 128
+        stride: Union[int, Tuple[int, int], List[int]] = 128,
+        tile_size: Union[int, Tuple[int, int], List[int]] = 256
     ) -> None:
         super().__init__(root, split, bands, transforms, download, checksum)
-        self.stride = stride
+        if isinstance(tile_size, int):
+            self.tile_shape = (tile_size, tile_size)
+        elif isinstance(tile_size, (tuple, list)):
+            assert len(tile_size) == 2
+            self.tile_shape = tile_size.copy()
+
+        if isinstance(stride, int):
+            stride_shape = (stride, stride)
+        elif isinstance(stride, (tuple, list)):
+            assert len(stride) == 2
+            stride_shape = stride.copy()
+        
+        self.tile_overlap = tuple(max(tile_size_dim - stride_dim, 0) for tile_size_dim, stride_dim in zip(self.tile_shape, stride_shape))
         self.total_dataset_length, self.chip_index_map, self.image_shapes_map = self._calculate_dataset_len()
 
     def _load_raw_index(self, index: int):
@@ -79,10 +89,9 @@ class OSCD_Chipped(OSCD):
           image1 = self._load_image(files["images1"])
           image1_tensor = torch.from_numpy(image1)
           raw_img_tensor = torch.cat([image1_tensor, image1_tensor])
-          
           tiler = Tiler(data_shape=raw_img_tensor.shape,
-                tile_shape=(raw_img_tensor.shape[0], 256, 256),
-                overlap=max(256 - self.stride, 0),
+                tile_shape=(raw_img_tensor.shape[0], self.tile_shape[0], self.tile_shape[1]),
+                overlap=(raw_img_tensor.shape[0]-1, self.tile_overlap[0], self.tile_overlap[1]),
                 mode="drop",
                 channel_dimension=0)
           
@@ -111,8 +120,8 @@ class OSCD_Chipped(OSCD):
         full_image_shape = self.image_shapes_map[file_index].copy()
         full_image_shape[0] = full_image_shape[0] + 1
         tiler = Tiler(data_shape=full_image_shape,
-              tile_shape=(full_image_shape[0], 256, 256),
-              overlap=max(256 - self.stride, 0),
+              tile_shape=(full_image_shape[0], self.tile_shape[0], self.tile_shape[1]),
+              overlap=(full_image_shape[0]-1, self.tile_overlap[0], self.tile_overlap[1]),
               mode="drop",
               channel_dimension=0)
 
@@ -131,7 +140,7 @@ class OSCD_Chipped(OSCD):
         sample = {"image": img_tile_tensor, "mask": mask_tile_tensor}
 
         if self.transforms is not None:
-            sample = self.transforms(sample['image'])
+            sample = self.transforms(sample)
 
         return sample
 
@@ -173,3 +182,66 @@ class OSCD_Chipped(OSCD):
             array: "np.typing.NDArray[np.int_]" = np.array(img.convert("L"))
             array = np.clip(array, a_min=0, a_max=1).astype(np.int_)
             return array
+
+    def get_normalization_values(self):
+        return OSCD_Chipped.GetNormalizationValues(self.bands)
+
+    @staticmethod
+    def GetNormalizationValues(bands="rgb"):
+        return OSCD_Chipped.normalisation_map[bands]
+
+    @staticmethod
+    def CalcMeanVar(root, split="train", bands="rgb", tile_size: Union[int, Tuple[int, int], List[int]] = 256):
+        if isinstance(tile_size, int):
+            tile_shape = (tile_size, tile_size)
+        elif isinstance(tile_size, (tuple, list)):
+            assert len(tile_size) == 2
+            tile_shape = tile_size.copy()
+
+        def t(img_dict):
+            return {'image': img_dict['image'].to(torch.float) / 10000, 'mask': img_dict['mask']}
+
+        dataset = OSCD(root=root, split=split, bands=bands, download=False, transforms = t)
+        loader = DataLoader(dataset, batch_size=1, num_workers=0)
+
+        def preproc_img(img_dict):
+            images = img_dict['image']
+            batch_samples = images.size(0)
+            n_channels = images.size(1)
+            # Separate the tensor into two tensors of shape (B, 3, W, H)
+            image1 = images[:, :(n_channels//2), :, :]
+            image2 = images[:, (n_channels//2):, :, :]
+            # Stack them to get a tensor of shape (2B, 3, W, H)
+            images = torch.cat((image1, image2), dim=0)
+            images = images.view(batch_samples, images.size(1), -1)
+            return images
+
+        mean = 0.0
+        for img_dict in loader:
+            images = preproc_img(img_dict)
+            mean += images.mean(2).sum(0)
+        mean = mean / len(loader.dataset)
+
+        var = 0.0
+        for img_dict in loader:
+            images = preproc_img(img_dict)
+            var += ((images - mean.unsqueeze(1))**2).sum([0,2])
+        std = torch.sqrt(var / (len(loader.dataset) * tile_shape[0] * tile_shape[1]))
+
+        return mean, std
+
+    @staticmethod
+    def GetScaleTransform():
+        return NormalizeScale(scale_factor=10000)
+    
+    @staticmethod
+    def GetNormalizeTransform(bands="rgb"):
+        # Mean/STD as 3 or 13 channels/bands
+        normalisation = OSCD_Chipped.GetNormalizationValues(bands)
+        # We are loading our dataset as a stack of two images (pre/post) as 2 *
+        # the number of channels in one image. So for RGB, our tensor has 6
+        # channels instead of 2. So we need to stack our normalisation tensor
+        # so it matches the image tensor.
+        mean, std = torch.tensor(normalisation[0]), torch.tensor(normalisation[1])
+        mean, std = torch.cat((mean, mean), dim=0), torch.cat((std, std), dim=0)
+        return NormalizeImageDict(mean=mean, std=std)
