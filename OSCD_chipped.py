@@ -240,12 +240,13 @@ class OSCD_Chipped(OSCD):
             image2 = images[:, (C//2):, :, :]
             # Stack them to get a tensor of shape (2B, 3, W, H)
             images = torch.cat((image1, image2), dim=0)
-            images = images.view(-1, C, W, H)
+            images = images.view(-1, C//2, W, H)
             return images
 
         def compute_dataset_mean_std(dataloader):
-            total_sum = torch.zeros(next(iter(dataloader))['image'].shape[1])
-            total_sq_sum = torch.zeros(next(iter(dataloader))['image'].shape[1])
+            ex_img = preproc_img(next(iter(dataloader))).shape[1]
+            total_sum = torch.zeros(ex_img)
+            total_sq_sum = torch.zeros(ex_img)
             total_num_pixels = 0
 
             for batch in dataloader:
