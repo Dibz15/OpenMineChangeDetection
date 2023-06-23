@@ -1,3 +1,4 @@
+from IPython.core.interactiveshell import import_item
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
@@ -10,6 +11,7 @@ import torch
 from torch import Tensor
 from PIL import Image
 import os
+from tiler import Tiler, Merger
 
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets import OSCD
@@ -222,13 +224,7 @@ class OSCD_Chipped(OSCD):
         return OSCD_Chipped.normalisation_map[bands]
 
     @staticmethod
-    def CalcMeanVar(root, split="train", bands="rgb", tile_size: Union[int, Tuple[int, int], List[int]] = 256):
-        if isinstance(tile_size, int):
-            tile_shape = (tile_size, tile_size)
-        elif isinstance(tile_size, (tuple, list)):
-            assert len(tile_size) == 2
-            tile_shape = tile_size.copy()
-
+    def CalcMeanVar(root, split="train", bands="rgb"):
         def t(img_dict):
             return {'image': img_dict['image'].to(torch.float), 'mask': img_dict['mask']}
 
@@ -238,28 +234,31 @@ class OSCD_Chipped(OSCD):
         def preproc_img(img_dict):
             images = img_dict['image']
             batch_samples = images.size(0)
-            n_channels = images.size(1)
+            B, C, W, H = images.size()
             # Separate the tensor into two tensors of shape (B, 3, W, H)
-            image1 = images[:, :(n_channels//2), :, :]
-            image2 = images[:, (n_channels//2):, :, :]
+            image1 = images[:, :(C//2), :, :]
+            image2 = images[:, (C//2):, :, :]
             # Stack them to get a tensor of shape (2B, 3, W, H)
             images = torch.cat((image1, image2), dim=0)
-            images = images.view(batch_samples, images.size(1), -1)
+            images = images.view(-1, C, W, H)
             return images
 
-        mean = 0.0
-        for img_dict in loader:
-            images = preproc_img(img_dict)
-            mean += images.mean(2).sum(0)
-        mean = mean / len(loader.dataset)
+        def compute_dataset_mean_std(dataloader):
+            total_sum = torch.zeros(next(iter(dataloader))['image'].shape[1])
+            total_sq_sum = torch.zeros(next(iter(dataloader))['image'].shape[1])
+            total_num_pixels = 0
 
-        var = 0.0
-        for img_dict in loader:
-            images = preproc_img(img_dict)
-            var += ((images - mean.unsqueeze(1))**2).sum([0,2])
-        std = torch.sqrt(var / (len(loader.dataset) * tile_shape[0] * tile_shape[1]))
+            for batch in dataloader:
+                image = preproc_img(batch).float()
+                total_sum += image.sum(dim=[0, 2, 3])  # sum of pixel values in each channel
+                total_sq_sum += (image ** 2).sum(dim=[0, 2, 3])  # sum of squared pixel values in each channel
+                total_num_pixels += image.shape[0] * image.shape[2] * image.shape[3]  # total number of pixels in an image
 
-        return mean, std
+            mean = total_sum / total_num_pixels  # mean = total sum / total number of pixels
+            std = (total_sq_sum / total_num_pixels - mean ** 2) ** 0.5  # std = sqrt(E[X^2] - E[X]^2)
+
+            return mean, std
+        return compute_dataset_mean_std(loader)
 
     @staticmethod
     def GetScaleTransform():
