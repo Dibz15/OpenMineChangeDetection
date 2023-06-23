@@ -14,15 +14,41 @@ import os
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets import OSCD
 from torchvision.transforms import Normalize
-from .transforms import NormalizeImageDict, NormalizeScale
+from transforms import NormalizeScale, NormalizeImageDict
 
 class OSCD_Chipped(OSCD):
 
     normalisation_map = {
-        "rgb": ([0.1212, 0.1279, 0.1288], [0.2469, 0.2357, 0.1856]),
-        "all": ([0.1443, 0.1212, 0.1553, 0.1946, 0.1357, 0.0936, 0.1448, 0.1288, 0.1293,
-         0.1907, 0.2039, 0.0324, 0.1620], [0.1377, 0.2469, 0.2937, 0.3299, 0.4074, 0.4604, 0.2402, 0.1856, 0.2878,
-         0.3034, 0.3351, 0.1544, 0.3753])
+        "rgb": (torch.tensor([1325.6158, 1294.1616, 1374.3202]), torch.tensor([151.1401, 105.6966, 83.4168])),
+        "all": (torch.tensor([
+                  1583.0741,
+                  1374.3202,
+                  1294.1616,
+                  1325.6158,
+                  1478.7408,
+                  1933.0822,
+                  2166.0608,
+                  2076.4868,
+                  2306.0652,
+                  690.9814,
+                  16.2360,
+                  2080.3347,
+                  1524.6930,]), 
+                torch.tensor([ 
+                  52.1937,
+                  83.4168,
+                  105.6966,
+                  151.1401,
+                  147.4615,
+                  115.9289,
+                  123.1974,
+                  114.6483,
+                  141.4530,
+                  73.2758,
+                  4.8368,
+                  213.4821,
+                  179.4793])
+              )
     }
 
     def __init__(
@@ -186,6 +212,11 @@ class OSCD_Chipped(OSCD):
     def get_normalization_values(self):
         return OSCD_Chipped.GetNormalizationValues(self.bands)
 
+    def split_images(self, images):
+        n_bands = 3 if self.bands == "rgb" else 13
+        pre, post = images[:, 0:n_bands], images[:, n_bands:2*n_bands]
+        return pre, post
+
     @staticmethod
     def GetNormalizationValues(bands="rgb"):
         return OSCD_Chipped.normalisation_map[bands]
@@ -199,7 +230,7 @@ class OSCD_Chipped(OSCD):
             tile_shape = tile_size.copy()
 
         def t(img_dict):
-            return {'image': img_dict['image'].to(torch.float) / 10000, 'mask': img_dict['mask']}
+            return {'image': img_dict['image'].to(torch.float), 'mask': img_dict['mask']}
 
         dataset = OSCD(root=root, split=split, bands=bands, download=False, transforms = t)
         loader = DataLoader(dataset, batch_size=1, num_workers=0)
