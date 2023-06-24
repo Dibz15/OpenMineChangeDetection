@@ -16,6 +16,15 @@ def unzip_file(zip_path, extract_path):
 def move_folder(source_path, destination_path):
     shutil.move(source_path, destination_path)
 
+def copy_and_unzip(local_path, drive_path, archive_name):
+    print(f"Copying the archive file '{archive_name}' from Google Drive to local folder...")
+    copy_file(os.path.join(drive_path, archive_name), os.path.join(local_path, archive_name))
+    print("Archive file copied successfully.")
+
+    print(f"Unzipping the archive file '{archive_name}'...")
+    unzip_file(os.path.join(local_path, archive_name), local_path)
+    print("Archive file unzipped successfully.")
+
 def load_and_prepare_oscd(local_path="/content/datasets", drive_path="/content/drive/MyDrive/2023_dissertation/dataset_archives/"):
     if os.path.exists(os.path.join(local_path, "OSCD")):
         print("An 'OSCD' folder already exists in the local path. Skipping dataset loading and preparation.")
@@ -24,13 +33,7 @@ def load_and_prepare_oscd(local_path="/content/datasets", drive_path="/content/d
     create_folder_if_not_exists(local_path)
 
     OSCD = "OSCD_Daudt_2018_full.zip"
-    print(f"Copying the archive file '{OSCD}' from Google Drive to local folder...")
-    copy_file(os.path.join(drive_path, OSCD), os.path.join(local_path, OSCD))
-    print("Archive file copied successfully.")
-
-    print(f"Unzipping the archive file '{OSCD}'...")
-    unzip_file(os.path.join(local_path, OSCD), local_path)
-    print("Archive file unzipped successfully.")
+    copy_and_unzip(local_path, drive_path, OSCD)
 
     print("Moving the extracted folders and renaming if necessary...")
     move_folder(os.path.join(local_path, "Onera"), os.path.join(local_path, "OSCD"))
