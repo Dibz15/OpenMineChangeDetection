@@ -98,7 +98,7 @@ def normalize_sample(sample, mean, std):
     sample['image'] = normalized_image
     return sample
 
-def get_norm_coefficients(bands="rgb"):
+def get_oscd_norm_coefficients(bands="rgb"):
     # mean = OSCDDataModule.mean
     # std = OSCDDataModule.std
     mean = torch.tensor([1571.1372, 1365.5087, 1284.8223, 1298.9539, 1431.2260, 1860.9531,
