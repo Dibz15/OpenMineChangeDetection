@@ -12,6 +12,7 @@ from torch import Tensor
 from PIL import Image
 import os
 from tiler import Tiler, Merger
+from torch.utils.data import DataLoader
 
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets import OSCD
