@@ -1,6 +1,6 @@
 from typing import List
 import torchvision
-from models.layers import MixingMaskAttentionBlock, PixelwiseLinear, UpMask, MixingBlock
+from .layers import MixingMaskAttentionBlock, PixelwiseLinear, UpMask, MixingBlock
 from torch import Tensor
 from torch.nn import Module, ModuleList, Sigmoid
 from torchvision.models import EfficientNet_B4_Weights

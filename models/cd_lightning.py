@@ -36,4 +36,4 @@ class ChangeDetectorLightningModule(pl.LightningModule):
         optimizer = torch.optim.AdamW(self.parameters(), lr=0.003,
                                       weight_decay=0.009449677083344786, amsgrad=False)
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
-        return {"optimizer": optimizer, "lr_scheduler": None}
+        return {"optimizer": optimizer }#, "lr_scheduler": None}
