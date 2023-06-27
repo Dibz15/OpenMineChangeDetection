@@ -171,3 +171,76 @@ class OMCD(NonGeoDataset):
 
             return mean, std
         return compute_dataset_mean_std(loader)
+
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+from typing import Any, Union
+
+import kornia.augmentation as K
+import torch
+from einops import repeat
+
+from torchgeo.samplers.utils import _to_tuple
+from torchgeo.transforms import AugmentationSequential
+from torchgeo.transforms.transforms import _RandomNCrop
+from torchgeo.datamodules.geo import NonGeoDataModule
+from torchgeo.datamodules.utils import dataset_split
+
+class OMCDDataModule(NonGeoDataModule):
+    """LightningDataModule implementation for the OMCD dataset.
+
+    Uses the train/test splits from the dataset and further splits
+    the train split into train/val splits.
+    """
+    mean = torch.tensor([121.7963, 123.6833, 116.5527])
+    std = torch.tensor([67.2949, 68.0268, 65.1758])
+
+    def __init__(
+        self,
+        batch_size: int = 64,
+        # patch_size: Union[tuple[int, int], int] = 64,
+        val_split_pct: float = 0.2,
+        num_workers: int = 0,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize a new OSCDDataModule instance.
+
+        Args:
+            batch_size: Size of each mini-batch.
+            # patch_size: Size of each patch, either ``size`` or ``(height, width)``.
+            #     Should be a multiple of 32 for most segmentation architectures.
+            val_split_pct: Percentage of the dataset to use as a validation set.
+            num_workers: Number of workers for parallel data loading.
+            **kwargs: Additional keyword arguments passed to
+                :class:`~torchgeo.datasets.OSCD`.
+        """
+        super().__init__(OMCD, batch_size, num_workers, **kwargs)
+
+        # self.patch_size = _to_tuple(patch_size)
+        self.val_split_pct = val_split_pct
+
+        # Change detection, 2 images from different times
+        self.mean = torch.cat((self.mean, self.mean), dim=0)
+        self.std = torch.cat((self.std, self.std), dim=0)
+
+        self.aug = AugmentationSequential(
+            K.Normalize(mean=self.mean, std=self.std),
+            # _RandomNCrop(self.patch_size, batch_size),
+            data_keys=["image", "mask"],
+        )
+
+
+    def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either 'fit', 'validate', 'test', or 'predict'.
+        """
+        if stage in ["fit", "validate"]:
+            self.dataset = OMCD(split="train", **self.kwargs)
+            self.train_dataset, self.val_dataset = dataset_split(
+                self.dataset, val_pct=self.val_split_pct
+            )
+        if stage in ["test"]:
+            self.test_dataset = OMCD(split="test", **self.kwargs)

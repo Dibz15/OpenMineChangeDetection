@@ -114,3 +114,13 @@ def get_oscd_norm_coefficients(bands="rgb"):
     mean = torch.cat([mean, mean], dim=0)
     std = torch.cat([std, std], dim=0)
     return mean, std
+
+def get_omcd_norm_coefficients():
+    # mean = OSCDDataModule.mean
+    # std = OSCDDataModule.std
+    mean = torch.tensor([121.7963, 123.6833, 116.5527])
+    std = torch.tensor([67.2949, 68.0268, 65.1758])
+
+    mean = torch.cat([mean, mean], dim=0)
+    std = torch.cat([std, std], dim=0)
+    return mean, std
