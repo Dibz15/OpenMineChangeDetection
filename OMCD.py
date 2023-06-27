@@ -7,6 +7,7 @@ import numpy as np
 from torchgeo.datasets.utils import draw_semantic_segmentation_masks
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from .transforms import NormalizeScale, NormalizeImageDict
 
 class OMCD(NonGeoDataset):
     """OMCD Dataset
@@ -20,6 +21,8 @@ class OMCD(NonGeoDataset):
 
     License: CC By 4.0 - https://creativecommons.org/licenses/by/4.0/
     """
+    mean = torch.tensor([121.7963, 123.6833, 116.5527])
+    std = torch.tensor([67.2949, 68.0268, 65.1758])
 
     colormap = ["blue"]
     def __init__(self, root, split="train", transforms = None):
@@ -172,6 +175,15 @@ class OMCD(NonGeoDataset):
             return mean, std
         return compute_dataset_mean_std(loader)
 
+    @staticmethod
+    def GetNormalizeTransform():
+        # We are loading our dataset as a stack of two images (pre/post) as 2 *
+        # the number of channels in one image. So for RGB, our tensor has 6
+        # channels instead of 2. So we need to stack our normalisation tensor
+        # so it matches the image tensor.
+        mean, std = OMCD.mean, OMCD.std
+        mean, std = torch.cat((mean, mean), dim=0), torch.cat((std, std), dim=0)
+        return NormalizeImageDict(mean=mean, std=std)
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
@@ -193,8 +205,8 @@ class OMCDDataModule(NonGeoDataModule):
     Uses the train/test splits from the dataset and further splits
     the train split into train/val splits.
     """
-    mean = torch.tensor([121.7963, 123.6833, 116.5527])
-    std = torch.tensor([67.2949, 68.0268, 65.1758])
+    mean = OMCD.mean
+    std = OMCD.std
 
     def __init__(
         self,
