@@ -17,40 +17,17 @@ from torch.utils.data import DataLoader
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets import OSCD
 from torchvision.transforms import Normalize
-from transforms import NormalizeScale, NormalizeImageDict
+from .transforms import NormalizeScale, NormalizeImageDict
 
 class OSCD_Chipped(OSCD):
-
     normalisation_map = {
-        "rgb": (torch.tensor([1325.6158, 1294.1616, 1374.3202]), torch.tensor([151.1401, 105.6966, 83.4168])),
-        "all": (torch.tensor([
-                  1583.0741,
-                  1374.3202,
-                  1294.1616,
-                  1325.6158,
-                  1478.7408,
-                  1933.0822,
-                  2166.0608,
-                  2076.4868,
-                  2306.0652,
-                  690.9814,
-                  16.2360,
-                  2080.3347,
-                  1524.6930,]), 
-                torch.tensor([ 
-                  52.1937,
-                  83.4168,
-                  105.6966,
-                  151.1401,
-                  147.4615,
-                  115.9289,
-                  123.1974,
-                  114.6483,
-                  141.4530,
-                  73.2758,
-                  4.8368,
-                  213.4821,
-                  179.4793])
+        "rgb": (torch.tensor([1298.9539, 1284.8223, 1365.5087]), torch.tensor([765.5303, 537.6539, 414.6901])),
+        "all": (torch.tensor([1571.1372, 1365.5087, 1284.8223, 1298.9539, 1431.2260, 1860.9531,
+                    2081.9634, 1994.7665, 2214.5986,  641.4485,   14.3672, 1957.3165,
+                    1419.6107]), 
+                torch.tensor([274.9591,  414.6901,  537.6539,  765.5303,  724.2261,  760.2133,
+                    848.7888,  866.8081,  920.1696,  322.1572,    8.6878, 1019.1249,
+                    872.1970])
               )
     }
 
