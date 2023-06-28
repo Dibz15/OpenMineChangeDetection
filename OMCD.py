@@ -8,6 +8,7 @@ from torchgeo.datasets.utils import draw_semantic_segmentation_masks
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from .transforms import NormalizeScale, NormalizeImageDict
+from typing import Any, Tuple, Union
 
 class OMCD(NonGeoDataset):
     """OMCD Dataset
@@ -241,7 +242,7 @@ class OMCDDataModule(NonGeoDataModule):
             # _RandomNCrop(self.patch_size, batch_size),
             data_keys=["image", "mask"],
         )
-
+        self.transforms = {stage: None for stage in ['fit', 'validate', 'test', 'predict']}
 
     def setup(self, stage: str) -> None:
         """Set up datasets.
@@ -254,5 +255,12 @@ class OMCDDataModule(NonGeoDataModule):
             self.train_dataset, self.val_dataset = dataset_split(
                 self.dataset, val_pct=self.val_split_pct
             )
+            self.train_dataset.transforms = self.transforms['fit']
+            self.val_dataset.transforms = self.transforms['validate']
         if stage in ["test"]:
             self.test_dataset = OMCD(split="test", **self.kwargs)
+            self.test_dataset.transforms = self.transforms['test']
+    
+    def set_transforms(self, transforms: Any, stage: str = "fit"):
+        assert stage in ['fit', 'validate', 'test', 'predict']
+        self.transforms[stage] = transforms

@@ -1,4 +1,5 @@
 from torchvision.transforms import Normalize
+
 class NormalizeScale:
     def __init__(self, scale_factor=10000):
         super().__init__()
