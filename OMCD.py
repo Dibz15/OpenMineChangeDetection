@@ -77,7 +77,6 @@ class OMCD(NonGeoDataset):
         mask = torch.from_numpy(mask).to(torch.uint8)
         sample = {'image': image, 'mask': mask}
         
-        print(self.transforms)
         if self.transforms is not None:
             sample = self.transforms(sample)
 

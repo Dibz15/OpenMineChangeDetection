@@ -16,7 +16,7 @@ class NormalizeImageDict(Normalize):
         super().__init__(mean, std)
 
     def __call__(self, sample):
-        sample['image'] = super().__call__(sample['image'])
+        sample['image'] = super().__call__(sample['image'].to(torch.float))
         return sample
 
 class TransformedSubset(Dataset):
