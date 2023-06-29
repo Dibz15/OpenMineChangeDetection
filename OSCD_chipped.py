@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets import OSCD
 from torchvision.transforms import Normalize
-from .transforms import NormalizeScale, NormalizeImageDict
+from .transforms import NormalizeScale, NormalizeImageDict, TransformedSubset
 
 class OSCD_Chipped(OSCD):
     normalisation_map = {
@@ -196,6 +196,9 @@ class OSCD_Chipped(OSCD):
         n_bands = 3 if self.bands == "rgb" else 13
         pre, post = images[:, 0:n_bands], images[:, n_bands:2*n_bands]
         return pre, post
+
+    def set_transforms(self, transforms):
+        self.transforms = transforms
 
     @staticmethod
     def GetNormalizationValues(bands="rgb"):

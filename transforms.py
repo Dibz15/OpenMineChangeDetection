@@ -1,4 +1,6 @@
 from torchvision.transforms import Normalize
+from torch.utils.data import Dataset
+import torch
 
 class NormalizeScale:
     def __init__(self, scale_factor=10000):
@@ -16,3 +18,18 @@ class NormalizeImageDict(Normalize):
     def __call__(self, sample):
         sample['image'] = super().__call__(sample['image'])
         return sample
+
+class TransformedSubset(Dataset):
+    def __init__(self, subset, transform):
+        self.subset = subset
+        self.transform = transform
+
+    def __getitem__(self, index):
+        x = self.subset[index]
+        if self.transform:
+            return self.transform(x)
+        else:
+            return x
+
+    def __len__(self):
+        return len(self.subset)

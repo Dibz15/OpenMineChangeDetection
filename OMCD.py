@@ -7,7 +7,7 @@ import numpy as np
 from torchgeo.datasets.utils import draw_semantic_segmentation_masks
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
-from .transforms import NormalizeScale, NormalizeImageDict
+from .transforms import NormalizeScale, NormalizeImageDict, TransformedSubset
 from typing import Any, Tuple, Union
 
 class OMCD(NonGeoDataset):
@@ -77,10 +77,14 @@ class OMCD(NonGeoDataset):
         mask = torch.from_numpy(mask).to(torch.uint8)
         sample = {'image': image, 'mask': mask}
         
+        print(self.transforms)
         if self.transforms is not None:
             sample = self.transforms(sample)
 
         return sample
+
+    def set_transforms(self, transforms):
+        self.transforms = transforms
 
     # Adapted from https://torchgeo.readthedocs.io/en/latest/_modules/torchgeo/datasets/oscd.html#OSCD
     def plot(
@@ -255,11 +259,11 @@ class OMCDDataModule(NonGeoDataModule):
             self.train_dataset, self.val_dataset = dataset_split(
                 self.dataset, val_pct=self.val_split_pct
             )
-            self.train_dataset.transforms = self.transforms['fit']
-            self.val_dataset.transforms = self.transforms['validate']
+            self.train_dataset = TransformedSubset(self.train_dataset, self.transforms['fit'])
+            self.val_dataset = TransformedSubset(self.val_dataset, self.transforms['validate'])
         if stage in ["test"]:
             self.test_dataset = OMCD(split="test", **self.kwargs)
-            self.test_dataset.transforms = self.transforms['test']
+            self.test_dataset.set_transforms(self.transforms['test'])
     
     def set_transforms(self, transforms: Any, stage: str = "fit"):
         assert stage in ['fit', 'validate', 'test', 'predict']
