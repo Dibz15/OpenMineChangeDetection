@@ -140,7 +140,7 @@ class OSCD_Chipped(OSCD):
 
         img_tile, mask_tile = img_mask_tile[0:full_image_shape[0] - 1, :, :], img_mask_tile[full_image_shape[0] - 1, :, :]
         img_tile_tensor = torch.from_numpy(img_tile)
-        mask_tile_tensor = torch.from_numpy(mask_tile).to(torch.long)
+        mask_tile_tensor = torch.from_numpy(mask_tile).to(torch.long).unsqueeze(0)
 
         # image = torch.cat([image1, image2])
         sample = {"image": img_tile_tensor, "mask": mask_tile_tensor}
