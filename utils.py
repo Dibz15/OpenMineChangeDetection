@@ -5,6 +5,8 @@ from torchvision.transforms.functional import to_pil_image
 from torchgeo.datasets.utils import draw_semantic_segmentation_masks
 import numpy as np
 import kornia.augmentation as K
+from .metrics.metric_tool import ConfuseMatrixMeter
+from tqdm import tqdm
 
 def plot_prediction(
     model: torch.nn.Module,
@@ -124,3 +126,38 @@ def get_omcd_norm_coefficients():
     mean = torch.cat([mean, mean], dim=0)
     std = torch.cat([std, std], dim=0)
     return mean, std
+
+def test_TinyCD(model, device, datamodule, threshold=0.4):
+    bce_loss = 0.0
+    criterion = torch.nn.BCELoss()
+
+    # tool for metrics
+    tool_metric = ConfuseMatrixMeter(n_class=2)
+    model = model.eval()
+    model = model.to(device)
+    test_loader = datamodule.test_dataloader()
+    with torch.no_grad():
+        for img_dict in tqdm(test_loader):
+            img_dict = datamodule.aug(img_dict)
+            # print(img_dict['image'].shape)
+            # pass refence and test in the model
+            generated_mask = model(img_dict['image'].to(device)).squeeze(1)
+            # compute the loss for the batch and backpropagate
+
+            bce_loss += criterion(generated_mask, img_dict['mask'].to(device).float())
+
+            ### Update the metric tool
+            bin_genmask = (generated_mask > threshold)
+            # print(bin_genmask)
+            bin_genmask = bin_genmask.cpu().numpy().astype(int)
+            mask = img_dict['mask'].cpu().numpy().astype(int)
+            tool_metric.update_cm(pr=bin_genmask, gt=mask)
+            # break
+
+        bce_loss /= len(test_loader)
+        print("Test summary")
+        print("Loss is {}".format(bce_loss))
+        print()
+
+        scores_dictionary = tool_metric.get_scores()
+        print(scores_dictionary)
