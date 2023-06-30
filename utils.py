@@ -12,7 +12,7 @@ def plot_prediction(
     model: torch.nn.Module,
     sample,
     bands: str,
-    colormap,
+    colormap: str = "blue",
     threshold: float = 0.5,
     alpha: float = 0.4,
     show_titles: bool = True,
@@ -156,9 +156,7 @@ def test_TinyCD(model, device, datamodule, threshold=0.4):
             # break
 
         bce_loss /= len(test_loader)
-        print("Test summary")
-        print("Loss is {}".format(bce_loss))
-        print()
-
+        
         scores_dictionary = tool_metric.get_scores()
-        print(scores_dictionary)
+        scores_dictionary['loss'] = bce_loss
+        return scores_dictionary
