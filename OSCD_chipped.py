@@ -4,7 +4,7 @@ from IPython.core.interactiveshell import import_item
 
 """OSCD dataset."""
 from collections.abc import Sequence
-from typing import Callable, Optional, Union, Tuple, List
+from typing import Any, Callable, Optional, Union, Tuple, List
 
 import numpy as np
 import torch
@@ -18,6 +18,11 @@ from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets import OSCD
 from torchvision.transforms import Normalize
 from .transforms import NormalizeScale, NormalizeImageDict, TransformedSubset
+
+import kornia.augmentation as K
+from torchgeo.transforms import AugmentationSequential
+from torchgeo.datamodules.geo import NonGeoDataModule
+from torchgeo.datamodules.utils import dataset_split
 
 class OSCD_Chipped(OSCD):
     normalisation_map = {
@@ -257,3 +262,74 @@ class OSCD_Chipped(OSCD):
         mean, std = torch.tensor(normalisation[0]), torch.tensor(normalisation[1])
         mean, std = torch.cat((mean, mean), dim=0), torch.cat((std, std), dim=0)
         return NormalizeImageDict(mean=mean, std=std)
+
+# Adapted from https://torchgeo.readthedocs.io/en/latest/_modules/torchgeo/datamodules/oscd.html#OSCDDataModule
+class OSCDDataModule(NonGeoDataModule):
+    """LightningDataModule implementation for the OSCD dataset.
+
+    Uses the train/test splits from the dataset and further splits
+    the train split into train/val splits.
+
+    .. versionadded:: 0.2
+    """
+    mean = OSCD_Chipped.normalisation_map['all'][0]
+    std = OSCD_Chipped.normalisation_map['all'][1]
+
+    def __init__(
+        self,
+        batch_size: int = 64,
+        val_split_pct: float = 0.2,
+        num_workers: int = 0,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize a new OSCDDataModule instance.
+
+        Args:
+            batch_size: Size of each mini-batch.
+            patch_size: Size of each patch, either ``size`` or ``(height, width)``.
+                Should be a multiple of 32 for most segmentation architectures.
+            val_split_pct: Percentage of the dataset to use as a validation set.
+            num_workers: Number of workers for parallel data loading.
+            **kwargs: Additional keyword arguments passed to
+                :class:`~torchgeo.datasets.OSCD`.
+        """
+        super().__init__(OSCD_Chipped, batch_size, num_workers, **kwargs)
+
+        self.val_split_pct = val_split_pct
+
+        self.bands = kwargs.get("bands", "all")
+        if self.bands == "rgb":
+            self.mean = self.mean[[3, 2, 1]]
+            self.std = self.std[[3, 2, 1]]
+
+        # Change detection, 2 images from different times
+        self.mean = torch.cat([self.mean, self.mean], dim=0)
+        self.std = torch.cat([self.std, self.std], dim=0)
+
+        self.aug = AugmentationSequential(
+            K.Normalize(mean=self.mean, std=self.std),
+            # _RandomNCrop(self.patch_size, batch_size),
+            data_keys=["image", "mask"],
+        )
+        self.transforms = {stage: None for stage in ['fit', 'validate', 'test', 'predict']}
+
+    def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either 'fit', 'validate', 'test', or 'predict'.
+        """
+        if stage in ["fit", "validate"]:
+            self.dataset = OSCD_Chipped(split="train", **self.kwargs)
+            self.train_dataset, self.val_dataset = dataset_split(
+                self.dataset, val_pct=self.val_split_pct
+            )
+            self.train_dataset = TransformedSubset(self.train_dataset, self.transforms['fit'])
+            self.val_dataset = TransformedSubset(self.val_dataset, self.transforms['validate'])
+        if stage in ["test"]:
+            self.test_dataset = OSCD_Chipped(split="test", **self.kwargs)
+            self.test_dataset.set_transforms(self.transforms['test'])
+
+    def set_transforms(self, transforms: Any, stage: str = "fit"):
+        assert stage in ['fit', 'validate', 'test', 'predict']
+        self.transforms[stage] = transforms
