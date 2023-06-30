@@ -13,6 +13,7 @@ def plot_prediction(
     sample,
     bands: str,
     colormap,
+    threshold: float = 0.5,
     alpha: float = 0.4,
     show_titles: bool = True,
     suptitle: Optional[str] = None,
@@ -26,7 +27,7 @@ def plot_prediction(
 
     if len(img.shape) > 3:
         img = img.squeeze(0)
-    mask_pred = (mask_pred > 0.01).float()
+    mask_pred = (mask_pred > threshold).float()
 
     rgb_inds = [3, 2, 1] if bands == "all" else [0, 1, 2]
 
