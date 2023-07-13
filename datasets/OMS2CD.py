@@ -47,8 +47,13 @@ class OMS2CD(NonGeoDataset):
         tile_mode: str = "drop",
         load_area_mask: bool = False
     ) -> None:
+        assert bands in ['rgb', 'all']
+        assert split in ['train', 'val', 'test', 'all']
+        
         self.root_dir = root
         self.bands = bands
+        self.split = split
+
         self.mean = self.normalisation_map[bands][0]
         self.std = self.normalisation_map[bands][1]
         self.file_list = self._build_index()  # using build_index method to build the file list
@@ -78,13 +83,21 @@ class OMS2CD(NonGeoDataset):
         self.total_dataset_length, self.chip_index_map, self.image_shapes_map = self._calculate_dataset_len()
 
     def _build_index(self):
+        valid_facilities = set()
+        if self.split != 'all':
+            split_file_path = os.path.join(self.root_dir, f'{self.split}.csv')
+            with open(split_file_path, 'r') as file:
+                reader = csv.reader(file)
+                next(reader)
+                valid_facilities = set([str(row[0]) for row in reader])
         index_list = []
         with open(os.path.join(self.root_dir, 'mapping.csv'), 'r', newline='') as mapping_file:
             reader = csv.DictReader(mapping_file)
-
             for row in reader:
                 id = row['id']
                 facility = row['mask'].replace('.tif', '')
+                if len(valid_facilities) and facility not in valid_facilities:
+                    continue
                 imageA_path = os.path.join(self.root_dir, row['imageA'])
                 imageB_path = os.path.join(self.root_dir, row['imageB'])
                 mask_path = os.path.join(self.root_dir, 'mask', f'{facility}_{id}.tif')
@@ -215,7 +228,7 @@ class OMS2CD(NonGeoDataset):
     def _get_file_index(self, chip_index):
         return self.chip_index_map[chip_index]
 
-    def get_tile_files(self, chip_index):
+    def get_tile_file(self, chip_index):
         file_index, _ = self._get_file_index(chip_index)
         return self.file_list[file_index]
 
@@ -325,7 +338,7 @@ class OMS2CD(NonGeoDataset):
             meta['count'] = 1
 
         if not no_tile:
-            x,y = dataset.get_tile_relative_offset(998)
+            x,y = self.get_tile_relative_offset(998)
             meta['transform'] = meta['transform'] * Affine.translation(x, y)
             meta['width'] = img_dict['image'].shape[1]
             meta['height'] = img_dict['image'].shape[2]
