@@ -1,10 +1,10 @@
+import csv
 import string
 import os
-import rasterio
-import torch
 import numpy as np
 import matplotlib.pyplot as plt
-import kornia.augmentation as K
+from rasterio import transform
+from rasterio.transform import Affine
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union, Tuple, List
 from torch import Tensor
@@ -13,13 +13,15 @@ from torchgeo.datasets import NonGeoDataset, OSCD
 from torchgeo.transforms import AugmentationSequential
 from torchgeo.datasets.utils import draw_semantic_segmentation_masks
 from torchvision.transforms import Normalize
-from TinyCD.transforms import NormalizeScale, NormalizeImageDict, TransformedSubset
+from .transforms import NormalizeScale, NormalizeImageDict, TransformedSubset
 from tiler import Tiler, Merger
-from rasterio.transform import Affine
 from torchgeo.datamodules.geo import NonGeoDataModule
 from torchgeo.datamodules.utils import dataset_split
-import csv
-from osgeo import gdal
+from torchgeo.samplers.utils import _to_tuple
+from torchgeo.transforms.transforms import _RandomNCrop
+import torch
+import kornia.augmentation as K
+import rasterio
 
 class OMS2CD(NonGeoDataset):
     normalisation_map = {
@@ -481,3 +483,64 @@ class OMS2CD(NonGeoDataset):
 
             return mean, std
         return compute_dataset_mean_std(dataset)
+
+
+class OMS2CDDataModule(NonGeoDataModule):
+    """LightningDataModule implementation for the OMCD dataset.
+
+    Uses the train/test splits from the dataset and further splits
+    the train split into train/val splits.
+    """
+    mean = OMS2CD.mean
+    std = OMS2CD.std
+
+    def __init__(
+        self,
+        batch_size: int = 16,
+        bands: str = 'rgb',
+        num_workers: int = 0,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize a new OSCDDataModule instance.
+
+        Args:
+            batch_size: Size of each mini-batch.
+            # patch_size: Size of each patch, either ``size`` or ``(height, width)``.
+            #     Should be a multiple of 32 for most segmentation architectures.
+            val_split_pct: Percentage of the dataset to use as a validation set.
+            num_workers: Number of workers for parallel data loading.
+            **kwargs: Additional keyword arguments passed to
+                :class:`~torchgeo.datasets.OSCD`.
+        """
+        super().__init__(OMS2CD, batch_size, num_workers, **kwargs)
+        self.mean, self.std = OMS2CD.GetNormalizationValues(bands)
+
+        # Change detection, 2 images from different times
+        self.mean = torch.cat((self.mean, self.mean), dim=0)
+        self.std = torch.cat((self.std, self.std), dim=0)
+
+        self.aug = AugmentationSequential(
+            K.Normalize(mean=self.mean, std=self.std),
+            # _RandomNCrop(self.patch_size, batch_size),
+            data_keys=["image", "mask"],
+        )
+        self.transforms = {stage: None for stage in ['fit', 'validate', 'test', 'predict']}
+
+    def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either 'fit', 'validate', 'test', or 'predict'.
+        """
+        if stage in ["fit", "validate"]:
+            self.train_dataset = OMS2CD(split="train", **self.kwargs)
+            self.train_dataset.set_transforms(self.transforms['fit'])
+            self.val_dataset = OMS2CD(split="val", **self.kwargs)
+            self.val_dataset.set_transforms(self.transforms['validate'])
+        if stage in ["test"]:
+            self.test_dataset = OMS2CD(split="test", **self.kwargs)
+            self.test_dataset.set_transforms(self.transforms['test'])
+    
+    def set_transforms(self, transforms: Any, stage: str = "fit"):
+        assert stage in ['fit', 'validate', 'test', 'predict']
+        self.transforms[stage] = transforms
