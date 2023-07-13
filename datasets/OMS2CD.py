@@ -525,6 +525,21 @@ class OMS2CDDataModule(NonGeoDataModule):
             data_keys=["image", "mask"],
         )
         self.transforms = {stage: None for stage in ['fit', 'validate', 'test', 'predict']}
+        def collate_fn(batch):
+            collated_batch = {}
+
+            # Iterate over each key in the batch
+            for key in batch[0].keys():
+                # If the data under this key is a tensor, stack it
+                if isinstance(batch[0][key], torch.Tensor):
+                    collated_batch[key] = torch.stack([item[key] for item in batch])
+                # If the data under this key is not a tensor, just store it as a list
+                else:
+                    collated_batch[key] = [item[key] for item in batch]
+                    
+            return collated_batch
+            
+        self.collate_fn = collate_fn
 
     def setup(self, stage: str) -> None:
         """Set up datasets.
