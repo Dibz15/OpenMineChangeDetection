@@ -1,6 +1,13 @@
 import os
 import shutil
 import zipfile
+import torch
+import matplotlib.pyplot as plt
+from typing import Dict, Optional
+from torchvision.transforms.functional import to_pil_image
+from torchgeo.datasets.utils import draw_semantic_segmentation_masks
+import numpy as np
+import kornia.augmentation as K
 
 def create_folder_if_not_exists(folder_path):
     if not os.path.exists(folder_path):
@@ -88,3 +95,50 @@ def load_and_prepare_omcd(local_path="/content/datasets", drive_path="/content/d
     #     print(f"Folder '{source_folder}' renamed successfully to '{destination_folder}'.")
 
     print("Dataset loading and preparation complete.")
+
+def crop_sample(dataset, index: int, size: int = 256):
+    from torchvision.transforms import CenterCrop
+
+    sample = dataset[index]
+    cropper = CenterCrop(size)
+
+    sample['image'] = cropper(sample['image'])
+    sample['mask'] = cropper(sample['mask'])
+
+    return sample
+
+def normalize_sample(sample, mean, std):
+    image = sample['image'].float()
+    if len(image.shape) < 4:
+        image = image.unsqueeze(0)
+    normalize = K.Normalize(mean, std)
+    normalized_image = normalize(image)
+    sample['image'] = normalized_image
+    return sample
+
+def get_oscd_norm_coefficients(bands="rgb"):
+    # mean = OSCDDataModule.mean
+    # std = OSCDDataModule.std
+    mean = torch.tensor([1571.1372, 1365.5087, 1284.8223, 1298.9539, 1431.2260, 1860.9531,
+                    2081.9634, 1994.7665, 2214.5986,  641.4485,   14.3672, 1957.3165,
+                    1419.6107])
+    std =  torch.tensor([274.9591,  414.6901,  537.6539,  765.5303,  724.2261,  760.2133,
+                    848.7888,  866.8081,  920.1696,  322.1572,    8.6878, 1019.1249,
+                    872.1970])
+    if bands == "rgb":
+        mean = mean[[3, 2, 1]]
+        std = std[[3, 2, 1]]
+
+    mean = torch.cat([mean, mean], dim=0)
+    std = torch.cat([std, std], dim=0)
+    return mean, std
+
+def get_omcd_norm_coefficients():
+    # mean = OSCDDataModule.mean
+    # std = OSCDDataModule.std
+    mean = torch.tensor([121.7963, 123.6833, 116.5527])
+    std = torch.tensor([67.2949, 68.0268, 65.1758])
+
+    mean = torch.cat([mean, mean], dim=0)
+    std = torch.cat([std, std], dim=0)
+    return mean, std

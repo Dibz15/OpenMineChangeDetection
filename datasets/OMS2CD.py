@@ -1,0 +1,470 @@
+import string
+import os
+import rasterio
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+import kornia.augmentation as K
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union, Tuple, List
+from torch import Tensor
+from torch.utils.data import Dataset, DataLoader
+from torchgeo.datasets import NonGeoDataset, OSCD
+from torchgeo.transforms import AugmentationSequential
+from torchgeo.datasets.utils import draw_semantic_segmentation_masks
+from torchvision.transforms import Normalize
+from TinyCD.transforms import NormalizeScale, NormalizeImageDict, TransformedSubset
+from tiler import Tiler, Merger
+from rasterio.transform import Affine
+from torchgeo.datamodules.geo import NonGeoDataModule
+from torchgeo.datamodules.utils import dataset_split
+import csv
+from osgeo import gdal
+
+class OMS2CD(NonGeoDataset):
+    normalisation_map = {
+        "rgb": (torch.tensor([192.9278, 185.3099, 191.5534]), torch.tensor([55.8556, 53.8176, 55.0711])),
+        "all": (torch.tensor([1571.1372, 1365.5087, 1284.8223, 1298.9539, 1431.2260, 1860.9531,
+                    2081.9634, 1994.7665, 2214.5986,  641.4485,   14.3672, 1957.3165,
+                    1419.6107]),
+                torch.tensor([274.9591,  414.6901,  537.6539,  765.5303,  724.2261,  760.2133,
+                    848.7888,  866.8081,  920.1696,  322.1572,    8.6878, 1019.1249,
+                    872.1970])
+              )
+    }
+    mean = normalisation_map['all'][0]
+    std = normalisation_map['all'][1]
+
+    colormap = ['blue']
+    def __init__(
+        self,
+        root,
+        split: str = "train",
+        bands: str = "rgb",
+        transforms: Optional[Callable[[dict[str, Tensor]], dict[str, Tensor]]] = None,
+        stride: Union[int, Tuple[int, int], List[int]] = 128,
+        tile_size: Union[int, Tuple[int, int], List[int]] = 256,
+        tile_mode: str = "drop",
+        load_area_mask: bool = False
+    ) -> None:
+        self.root_dir = root
+        self.bands = bands
+        self.mean = self.normalisation_map[bands][0]
+        self.std = self.normalisation_map[bands][1]
+        self.file_list = self._build_index()  # using build_index method to build the file list
+        self.transforms = transforms
+
+        if tile_size is None:
+            self.no_tile = True
+        else:
+            if isinstance(tile_size, int):
+                self.tile_shape = (tile_size, tile_size)
+            elif isinstance(tile_size, (tuple, list)):
+                assert len(tile_size) == 2
+                self.tile_shape = tile_size.copy()
+
+            if isinstance(stride, int):
+                stride_shape = (stride, stride)
+            elif isinstance(stride, (tuple, list)):
+                assert len(stride) == 2
+                stride_shape = stride.copy()
+
+            self.tile_overlap = tuple(max(tile_size_dim - stride_dim, 0) for tile_size_dim, stride_dim in zip(self.tile_shape, stride_shape))
+            self.no_tile = False
+
+        self.load_area_mask = load_area_mask
+        self.tile_mode = tile_mode
+        self.file_list = self._build_index()
+        self.total_dataset_length, self.chip_index_map, self.image_shapes_map = self._calculate_dataset_len()
+
+    def _build_index(self):
+        index_list = []
+        with open(os.path.join(self.root_dir, 'mapping.csv'), 'r', newline='') as mapping_file:
+            reader = csv.DictReader(mapping_file)
+
+            for row in reader:
+                id = row['id']
+                facility = row['mask'].replace('.tif', '')
+                imageA_path = os.path.join(self.root_dir, row['imageA'])
+                imageB_path = os.path.join(self.root_dir, row['imageB'])
+                mask_path = os.path.join(self.root_dir, 'mask', f'{facility}_{id}.tif')
+                area_mask_path = os.path.join(self.root_dir, 'area_mask', row['mask'])
+
+                if os.path.isfile(imageA_path) and os.path.isfile(imageB_path) \
+                        and os.path.isfile(mask_path) and os.path.isfile(area_mask_path):
+                    index_list.append((imageA_path, imageB_path, mask_path, area_mask_path))
+
+        return index_list
+
+    def _load_raw_index(self, index: int):
+        files = self.file_list[index]
+        imageA, meta = self._load_image(files[0])
+        imageB, _ = self._load_image(files[1])
+        mask, _ = self._load_image(str(files[2]))
+        mask = np.clip(mask, a_min=0, a_max=1).astype(np.uint8)
+        if not self.load_area_mask:
+            return imageA, imageB, mask, meta
+        else:
+            area_mask, _ = self._load_image(str(files[3]))
+            area_mask = np.clip(area_mask, a_min=0, a_max=1).astype(np.uint8)
+            return imageA, imageB, mask, area_mask, meta
+
+    def _load_tensor_index(self, index: int):
+        area_mask = None
+        if not self.load_area_mask:
+            image1, image2, mask, meta = self._load_raw_index(index)
+        else:
+            image1, image2, mask, area_mask, meta = self._load_raw_index(index)
+        image1_tensor = torch.from_numpy(image1)
+        image2_tensor = torch.from_numpy(image2)
+        mask_tensor = torch.from_numpy(mask).to(torch.uint8)
+        raw_img_tensor = torch.cat([image1_tensor, image2_tensor])
+
+        if area_mask is None:
+            return raw_img_tensor.to(torch.float), mask_tensor, meta
+        else:
+            area_mask_tensor = torch.from_numpy(area_mask).to(torch.uint8)
+            return raw_img_tensor.to(torch.float), mask_tensor, area_mask_tensor, meta
+
+    def _calculate_dataset_len(self):
+        """Returns the total length (number of chips) of the dataset
+            This is the total number of tiles after tiling every high-res image
+            in the dataset and calculating the tiling using the tiler.
+
+            This function also creates and returns a dictionary that maps from the
+            chipped dataset index to the original file index.
+
+        Returns:
+            - Length of the dataset in number of chips
+            - Index map (key is the chip index, value is a tuple of (file index, chip index relative to the last file))
+            - Map of image shapes
+        """
+        total_tiles = 0
+        index_map = {}
+        image_shapes = {}
+        if self.no_tile:
+            total_tiles = len(self.file_list)
+            index_map = {i: (i, i) for i in range(total_tiles)}
+
+            for i in range(total_tiles):
+                files = self.file_list[i]
+                image1, _ = self._load_image(files[0])
+                image1_tensor = torch.from_numpy(image1)
+                raw_img_tensor = torch.cat([image1_tensor, image1_tensor])
+                image_shapes[i] = list(raw_img_tensor.shape)
+        else:
+            for i in range(len(self.file_list)):
+                files = self.file_list[i]
+                image1, _ = self._load_image(files[0])
+                if image1.shape[1] < self.tile_shape[0] or image1.shape[2] < self.tile_shape[1]:
+                    continue
+                image1_tensor = torch.from_numpy(image1)
+                raw_img_tensor = torch.cat([image1_tensor, image1_tensor])
+                tiler = Tiler(data_shape=raw_img_tensor.shape,
+                      tile_shape=(raw_img_tensor.shape[0], self.tile_shape[0], self.tile_shape[1]),
+                      overlap=(raw_img_tensor.shape[0]-1, self.tile_overlap[0], self.tile_overlap[1]),
+                      mode=self.tile_mode,
+                      channel_dimension=0)
+
+                image_shapes[i] = list(raw_img_tensor.shape)
+                tile_shape = tiler.get_mosaic_shape(with_channel_dim=True)
+                num_tiles = tile_shape[0] * tile_shape[1] * tile_shape[2]
+                # Map chip index to file index
+                for j in range(total_tiles, total_tiles + num_tiles):
+                    index_map[j] = (i, j - total_tiles)
+
+                total_tiles += num_tiles
+
+        return total_tiles, index_map, image_shapes
+
+    def _load_image(self, path: string):
+        """Load a single image.
+        Args:
+            path: path to the image
+
+        Returns:
+            the image
+        """
+        with rasterio.open(path) as img:
+            image = img.read()  # rasterio reads images as (bands, height, width)
+            meta = img.meta
+        
+            return image, meta
+
+    def _get_full_image_shape(self, file_index):
+        full_image_shape = self.image_shapes_map[file_index].copy()
+        mask_channels = 1 if not self.load_area_mask else 2
+        full_image_shape[0] = full_image_shape[0] + mask_channels
+        return full_image_shape
+
+    def _get_tiler(self, file_index, channels_override = None):
+        full_image_shape = self._get_full_image_shape(file_index)
+        if self.no_tile:
+            return None, full_image_shape
+
+        if channels_override is not None and isinstance(channels_override, int):
+            full_image_shape[0] = channels_override
+
+        tiler = Tiler(data_shape=full_image_shape,
+              tile_shape=(full_image_shape[0], self.tile_shape[0], self.tile_shape[1]),
+              overlap=(full_image_shape[0]-1, self.tile_overlap[0], self.tile_overlap[1]),
+              mode=self.tile_mode,
+              channel_dimension=0)
+        return tiler, full_image_shape
+
+    def _get_file_index(self, chip_index):
+        return self.chip_index_map[chip_index]
+
+    def get_tile_files(self, chip_index):
+        file_index, _ = self._get_file_index(chip_index)
+        return self.file_list[file_index]
+
+    def __getitem__(self, chip_index: int) -> dict[str, Tensor]:
+        """Return an index within the dataset.
+
+        Args:
+            chip_index: index to return
+
+        Returns:
+            data and label at that index
+        """
+
+        (file_index, relative_chip_index) = self._get_file_index(chip_index)
+        if not self.no_tile:
+            tiler, full_image_shape = self._get_tiler(file_index)
+            if not self.load_area_mask:
+                img1, img2, mask, meta = self._load_raw_index(file_index)
+            else:
+                img1, img2, mask, area_mask, meta = self._load_raw_index(file_index)
+
+            try:
+                if not self.load_area_mask:
+                    img_full = np.concatenate((img1, img2, mask))
+                else:
+                    img_full = np.concatenate((img1, img2, mask, area_mask))
+            except ValueError as e:
+                print(e)
+                print(self.file_list[file_index])
+
+            img_mask_tile = tiler.get_tile(img_full, relative_chip_index, copy_data = False)
+
+            if not self.load_area_mask:
+                img_tile, mask_tile = img_mask_tile[0:full_image_shape[0] - 1, :, :], \
+                                          img_mask_tile[full_image_shape[0] - 1, :, :]
+            else:
+                img_tile, mask_tile, area_mask_tile = img_mask_tile[0:full_image_shape[0] - 2, :, :], \
+                                                          img_mask_tile[full_image_shape[0] - 2, :, :], \
+                                                          img_mask_tile[full_image_shape[0] - 1, :, :]
+        else:
+            if not self.load_area_mask:
+                img1, img2, mask_tile, meta = self._load_raw_index(file_index)
+            else:
+                img1, img2, mask_tile, area_mask_tile, meta = self._load_raw_index(file_index)
+                area_mask_tile = np.squeeze(area_mask_tile, 0)
+            
+            mask_tile = np.squeeze(mask_tile, 0)
+            img_tile = np.concatenate((img1, img2))
+
+        img_tile_tensor = torch.from_numpy(img_tile).to(torch.float)
+        mask_tile_tensor = torch.from_numpy(mask_tile).to(torch.uint8).unsqueeze(0)
+        
+        if self.load_area_mask:
+            area_mask_tile_tensor = torch.from_numpy(area_mask_tile).to(torch.uint8).unsqueeze(0)
+            sample = {"image": img_tile_tensor, "mask": mask_tile_tensor, 'area_mask': area_mask_tile_tensor, 'meta': meta}
+        else:
+            sample = {"image": img_tile_tensor, "mask": mask_tile_tensor, 'meta': meta}
+
+        if self.transforms is not None:
+            sample = self.transforms(sample)
+
+        return sample
+
+    def __len__(self) -> int:
+        """Return the number of data points in the dataset.
+
+        Returns:
+            length of the dataset
+        """
+        return self.total_dataset_length
+
+    def get_tile_relative_offset(self, tile_idx):
+        if not self.no_tile:
+            (file_index, relative_chip_index) = self._get_file_index(tile_idx)
+            tiler, _ = self._get_tiler(file_index)
+
+            bbox = tiler.get_tile_bbox(relative_chip_index)
+            TL = bbox[0][::-1]
+            # BR = bbox[1][::-1]
+            return TL[0], TL[1] #x, y in standard image coordinates
+        else:
+            return 0, 0
+
+    def get_tile_metadata(self, tile_idx, mask = False, no_tile = None):
+        """
+          Get tile-relative metadata. This is pulled from the metadata of the
+          original full-sized GeoTIFF. If tiles are enabled, the geolocation
+          metadata is transformed to be accurate for the specific tile in
+          question.
+
+          Args:
+            - tile_idx: The index of the tile.
+            - mask: (Default = False) If True, it will return the metadata for
+                the tile's mask layer.
+            - no_tile: (Default = None) If True, returns the metadata for the
+                full-sized original image. If False, only returns the metadata
+                for the given tile_idx. If None, uses the dataset's no_tile setting.
+          Returns:
+            The tile-relative metadata. The original metadata is not modified.
+        """
+        if no_tile is None:
+            no_tile = self.no_tile
+
+        img_dict = self[tile_idx]
+        meta = img_dict['meta'].copy()
+        if mask:
+            meta['count'] = 1
+
+        if not no_tile:
+            x,y = dataset.get_tile_relative_offset(998)
+            meta['transform'] = meta['transform'] * Affine.translation(x, y)
+            meta['width'] = img_dict['image'].shape[1]
+            meta['height'] = img_dict['image'].shape[2]
+            return meta
+        else:
+            return meta
+
+    def get_image_tile_ranges(self):
+        tile_idx_map = {}
+        for chip_index in self.chip_index_map.keys():
+            file_idx, rel_tile_idx = self.chip_index_map[chip_index]
+            if file_idx in tile_idx_map:
+                tile_idx_map[file_idx].append(chip_index)
+            else:
+                tile_idx_map[file_idx] = [chip_index]
+
+        for i in tile_idx_map.keys():
+            max_idx = max(tile_idx_map[i])
+            min_idx = min(tile_idx_map[i])
+            tile_idx_map[i] = (min_idx, max_idx)
+
+        return tile_idx_map
+
+    def set_transforms(self, transforms):
+        self.transforms = transforms
+
+    def get_normalization_values(self):
+        return self.__class__.GetNormalizationValues(self.bands)
+
+    def split_images(self, images):
+        n_bands = 3 if self.bands == "rgb" else 13
+        pre, post = images[:, 0:n_bands], images[:, n_bands:2*n_bands]
+        return pre, post
+
+    # Adapted from https://torchgeo.readthedocs.io/en/latest/_modules/torchgeo/datasets/oscd.html#OSCD
+    def plot(
+        self,
+        sample,
+        show_titles: bool = True,
+        suptitle = None,
+        alpha: float = 0.5,
+    ):
+        """Plot a sample from the dataset.
+
+        Args:
+            sample: a sample returned by :meth:`__getitem__`
+            show_titles: flag indicating whether to show titles above each panel
+            suptitle: optional string to use as a suptitle
+            alpha: opacity with which to render predictions on top of the imagery
+
+        Returns:
+            a matplotlib Figure with the rendered sample
+        """
+        ncols = 2
+
+        rgb_inds = [0, 1, 2]
+
+        def get_masked(img) -> "np.typing.NDArray[np.uint8]":
+            rgb_img = img[rgb_inds].float().numpy()
+            per02 = np.percentile(rgb_img, 2)
+            per98 = np.percentile(rgb_img, 98)
+            rgb_img = (np.clip((rgb_img - per02) / (per98 - per02), 0, 1) * 255).astype(
+                np.uint8
+            )
+            array: "np.typing.NDArray[np.uint8]" = draw_semantic_segmentation_masks(
+                torch.from_numpy(rgb_img),
+                sample["mask"],
+                alpha=alpha,
+                colors=self.colormap,
+            )
+            return array
+
+        idx = sample["image"].shape[0] // 2
+        image1 = get_masked(sample["image"][:idx])
+        image2 = get_masked(sample["image"][idx:])
+        fig, axs = plt.subplots(ncols=ncols, figsize=(ncols * 10, 10))
+        axs[0].imshow(image1)
+        axs[0].axis("off")
+        axs[1].imshow(image2)
+        axs[1].axis("off")
+
+        if show_titles:
+            axs[0].set_title("Pre change")
+            axs[1].set_title("Post change")
+
+        if suptitle is not None:
+            plt.suptitle(suptitle)
+
+        return fig
+
+    @classmethod
+    def GetNormalizationValues(cls, bands="rgb"):
+        return cls.normalisation_map[bands]
+
+    @classmethod
+    def GetNormalizeTransform(cls, bands='rgb'):
+        # Mean/STD as 3 or 13 channels/bands
+        [mean, std] = cls.GetNormalizationValues(bands)
+        # We are loading our dataset as a stack of two images (pre/post) as 2 *
+        # the number of channels in one image. So for RGB, our tensor has 6
+        # channels instead of 2. So we need to stack our normalisation tensor
+        # so it matches the image tensor.
+        mean, std = torch.cat((mean, mean), dim=0), torch.cat((std, std), dim=0)
+        return NormalizeImageDict(mean=mean, std=std)
+
+    @classmethod
+    def CalcMeanVar(cls, root, split="train", bands="rgb"):
+        def t(img_dict):
+            return {'image': img_dict['image'].to(torch.float), 'mask': img_dict['mask']}
+
+        dataset = cls(root=root, split=split, bands=bands, transforms = None, tile_size = None)
+
+        def preproc_img(img_dict):
+            images = img_dict['image']
+            images = images.unsqueeze(0)
+            batch_samples = images.size(0)
+            B, C, W, H = images.size()
+            # Separate the tensor into two tensors of shape (B, 3, W, H)
+            image1 = images[:, :(C//2), :, :]
+            image2 = images[:, (C//2):, :, :]
+            # Stack them to get a tensor of shape (2B, 3, W, H)
+            images = torch.cat((image1, image2), dim=0)
+            images = images.view(-1, C//2, W, H)
+            return images
+
+        def compute_dataset_mean_std(dataset):
+            ex_img = preproc_img(dataset[0]).shape[1]
+            total_sum = torch.zeros(ex_img)
+            total_sq_sum = torch.zeros(ex_img)
+            total_num_pixels = 0
+
+            for i in range(len(dataset)):
+                image = preproc_img(dataset[0]).float()
+                total_sum += image.sum(dim=[0, 2, 3])  # sum of pixel values in each channel
+                total_sq_sum += (image ** 2).sum(dim=[0, 2, 3])  # sum of squared pixel values in each channel
+                total_num_pixels += image.shape[0] * image.shape[2] * image.shape[3]  # total number of pixels in an image
+
+            mean = total_sum / total_num_pixels  # mean = total sum / total number of pixels
+            std = (total_sq_sum / total_num_pixels - mean ** 2) ** 0.5  # std = sqrt(E[X^2] - E[X]^2)
+
+            return mean, std
+        return compute_dataset_mean_std(dataset)
