@@ -10,7 +10,6 @@ from misc.metric_tools import ConfuseMatrixMeter
 from misc.torchutils import get_scheduler
 logger = logging.getLogger('base')
 
-
 class CD(BaseModel):
     def __init__(self, opt):
         super(CD, self).__init__(opt)
