@@ -35,7 +35,7 @@ def plot_prediction(
     rgb_inds = [3, 2, 1] if bands == "all" else [0, 1, 2]
 
     def get_masked(img: torch.Tensor, mask: torch.Tensor) -> "np.typing.NDArray[np.uint8]":
-        rgb_img = img[rgb_inds].float().numpy()
+        rgb_img = img[rgb_inds].float().cpu().numpy()
         per02 = np.percentile(rgb_img, 2)
         per98 = np.percentile(rgb_img, 98)
         rgb_img = (np.clip((rgb_img - per02) / (per98 - per02), 0, 1) * 255).astype(
