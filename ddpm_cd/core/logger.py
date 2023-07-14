@@ -13,10 +13,8 @@ def mkdirs(paths):
         for path in paths:
             os.makedirs(path, exist_ok=True)
 
-
 def get_timestamp():
     return datetime.now().strftime('%y%m%d_%H%M%S')
-
 
 def parse(args):
     phase = args.phase
