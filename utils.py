@@ -7,6 +7,9 @@ import numpy as np
 import kornia.augmentation as K
 from tqdm import tqdm
 from TinyCD.metrics.metric_tool import ConfuseMatrixMeter
+import requests
+import hashlib
+import os
 
 def plot_prediction(
     model: torch.nn.Module,
@@ -113,3 +116,39 @@ def test_TinyCD(model, device, datamodule, threshold=0.4):
         scores_dictionary = tool_metric.get_scores()
         scores_dictionary['loss'] = bce_loss
         return scores_dictionary
+
+def download_file(url, save_path):
+    response = requests.get(url, stream=True)
+    file_size = int(response.headers.get("Content-Length", 0))
+    progress = tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024, desc=f'Downloading file to {save_path}')
+
+    with open(save_path, 'wb') as file:
+        for data in response.iter_content(chunk_size=1024):
+            if data:
+                # Write data read to the file
+                file.write(data)
+                # Update the progress bar manually
+                progress.update(len(data))
+
+    progress.close()
+
+def compute_sha256(file_path):
+    sha256_hash = hashlib.sha256()
+    with open(file_path,"rb") as f:
+        # Read and update hash in chunks of 4K
+        for byte_block in iter(lambda: f.read(4096),b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+def verify_file(save_path, good_hash):
+    if os.path.isfile(save_path) and compute_sha256(save_path) == good_hash:
+        return True
+    else:
+        return False
+
+def download_and_verify(url, save_path, good_hash):
+    download_file(url, save_path)
+    print(f'Verifying hashes: ', end='')
+    verified = verify_file(save_path, good_hash)
+    print(f"{'Good.' if verified else 'Hashes do not match.'}")
+    return verified

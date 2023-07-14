@@ -1,135 +1,135 @@
 {
-    "name": "ddpm-RS-CDHead-OMS2CD",
-    "phase": "train", // train or test
-    "gpu_ids": [
-        0
-    ],
+	"name": "ddpm-RS-CDHead-OMS2CD",
+	"phase": "train",
+	"gpu_ids": [
+		0
+	],
 
-    "path": { //set the paths
-        "log": "logs",
-        "tb_logger": "tb_logger",
-        "results": "results",
-        "checkpoint": "checkpoint",
-        //"resume_state": null
-        "resume_state": "I190000_E97" //set path to pre-trained diffusion model
-    },
+	"path": {
+		"log": "logs",
+		"tb_logger": "tb_logger",
+		"results": "results",
+		"checkpoint": "checkpoint",
+		"resume_state": "I190000_E97"
+	},
 
-    "path_cd": { //set the path 
-        "log": "logs",
-        "tb_logger": "tb_logger",
-        "results": "results",
-        "checkpoint": "checkpoint",
-        "resume_state": null
-        //"resume_state": "experiments/ddpm-RS-CDHead_220502_082603/checkpoint/best_cd_model" //t=50
-        //"resume_state": "experiments/ddpm-RS-CDHead_220502_083019/checkpoint/best_cd_model" //t=100
-    },
+	"path_cd": {
+		"log": "logs",
+		"tb_logger": "tb_logger",
+		"results": "results",
+		"checkpoint": "checkpoint",
+		"resume_state": null
+	},
 
-    "datasets": {
-        "train": {
-            "name": "OMS2CD-256",
-            "dataroot": "OMS2CD",
-            "resolution": 256, // high resolution
-            "batch_size": 8,
-            "num_workers": 0,
-            "use_shuffle": true,
-            "data_len": -1 // -1 represents all data used in train
-        },
-        "val": {
-            "name": "OMS2CD-256",
-            "dataroot": "OMS2CD",
-            "resolution": 256, // high resolution
-            "batch_size": 4,
-            "num_workers": 0,
-            "use_shuffle": true,
-            "data_len": -1 // -1 represents all data used in train
-        },
-        "test": {
-            "name": "OMS2CD-256",
-            "dataroot": "OMS2CD",
-            "resolution": 256, // high resolution
-            "batch_size": 4,
-            "num_workers": 0,
-            "use_shuffle": false,
-            "data_len": -1 // -1 represents all data used in train
-        }
-    },
+	"datasets": {
+		"train": {
+			"name": "OMS2CD-256",
+			"dataroot": "OMS2CD",
+			"resolution": 256,
+			"batch_size": 8,
+			"num_workers": 0,
+			"use_shuffle": true,
+			"data_len": -1
+		},
+		"val": {
+			"name": "OMS2CD-256",
+			"dataroot": "OMS2CD",
+			"resolution": 256,
+			"batch_size": 4,
+			"num_workers": 0,
+			"use_shuffle": true,
+			"data_len": -1
+		},
+		"test": {
+			"name": "OMS2CD-256",
+			"dataroot": "OMS2CD",
+			"resolution": 256,
+			"batch_size": 4,
+			"num_workers": 0,
+			"use_shuffle": false,
+			"data_len": -1
+		}
+	},
 
-    "model_cd": {
-        "feat_scales": [2, 5, 8, 11, 14],
-        "out_channels": 2,
-        "loss_type": "ce",
-        "output_cm_size": 256,
-        "feat_type": "dec", //Options: 'enc'/'dec'
-        "t": [50, 100, 400]
-    },
+	"model_cd": {
+		"feat_scales": [2, 5, 8, 11, 14],
+		"out_channels": 2,
+		"loss_type": "ce",
+		"output_cm_size": 256,
+		"feat_type": "dec",
+		"t": [50, 100, 400]
+	},
 
-    "model": {
-        "which_model_G": "sr3", // use the ddpm or sr3 network structure
-        "finetune_norm": false,
-        "unet": {
-            "in_channel": 3,
-            "out_channel": 3,
-            "inner_channel": 128,
-            "channel_multiplier": [
-                1,
-                2,
-                4,
-                8,
-                8
-            ],
-            "attn_res": [
-                16
-            ],
-            "res_blocks": 2,
-            "dropout": 0.2
-        },
-        "beta_schedule": { // use munual beta_schedule for acceleration
-            "train": {
-                "schedule": "linear",
-                "n_timestep": 2000,
-                "linear_start": 1e-6,
-                "linear_end": 1e-2
-            },
-            "val": {
-                "schedule": "linear",
-                "n_timestep": 2000,
-                "linear_start": 1e-6,
-                "linear_end": 1e-2
-            },
-            "test": {
-                "schedule": "linear",
-                "n_timestep": 2000,
-                "linear_start": 1e-6,
-                "linear_end": 1e-2
-            }
-        },
-        "diffusion": {
-            "image_size": 256,
-            "channels": 3, //sample channel
-            "loss": "l2", //options "l1" or "l2"
-            "conditional": false, // unconditional generation or unconditional generation(super_resolution)
-            "download": true,
-            "opt_url": "https://drive.google.com/uc?export=download&id=1b-9WoBh6YFzDetyY4_sndS6D3Z1sYWNv&confirm=t&uuid=6e5fbc22-521e-49c9-bb8d-51e825c5ec18&at=ALt4Tm1B-bRzpRX6x0BzMf-pLawk:1689352680050",
-            "gen_url": "https://drive.google.com/uc?export=download&id=1Cd26moxKCZ1VAuPMDXQ6OYlpyZDloQbz&confirm=t&uuid=160f6c0d-6730-4d8a-a183-ba237e96a5f8&at=ALt4Tm13W5-2gXPzNy4ydaLAvomw:1689352740394"   
-        }
-    },
-    
-    "train": {
-        "n_epoch": 120,
-        "train_print_freq": 500,
-        "val_freq": 1,
-        "val_print_freq": 50,
-        "optimizer": {
-            "type": "adam",
-            "lr": 1e-4
-        },
-        "sheduler": {
-            "lr_policy": "linear",  // options: linear, poly, step
-            "n_steps": 3,           //this is aplicable only if step sheduler using
-            "gamma": 0.1            //Multiplicative factor of learning rate decay. Default: 0.1.
-        }
-    },
-    "wandb": {
-        "project": "ddpm-RS-CDHead"
-    }
+	"model": {
+		"which_model_G": "sr3",
+		"finetune_norm": false,
+		"unet": {
+			"in_channel": 3,
+			"out_channel": 3,
+			"inner_channel": 128,
+			"channel_multiplier": [
+				1,
+				2,
+				4,
+				8,
+				8
+			],
+			"attn_res": [
+				16
+			],
+			"res_blocks": 2,
+			"dropout": 0.2
+		},
+		"beta_schedule": {
+			"train": {
+				"schedule": "linear",
+				"n_timestep": 2000,
+				"linear_start": 1e-6,
+				"linear_end": 1e-2
+			},
+			"val": {
+				"schedule": "linear",
+				"n_timestep": 2000,
+				"linear_start": 1e-6,
+				"linear_end": 1e-2
+			},
+			"test": {
+				"schedule": "linear",
+				"n_timestep": 2000,
+				"linear_start": 1e-6,
+				"linear_end": 1e-2
+			}
+		},
+		"diffusion": {
+			"image_size": 256,
+			"channels": 3,
+			"loss": "l2",
+			"conditional": false,
+			"download": true,
+			"opt_url": "https://drive.google.com/uc?export=download&id=1b-9WoBh6YFzDetyY4_sndS6D3Z1sYWNv&confirm=t&uuid=6e5fbc22-521e-49c9-bb8d-51e825c5ec18&at=ALt4Tm1B-bRzpRX6x0BzMf-pLawk:1689352680050",
+			"gen_url": "https://drive.google.com/uc?export=download&id=1Cd26moxKCZ1VAuPMDXQ6OYlpyZDloQbz&confirm=t&uuid=160f6c0d-6730-4d8a-a183-ba237e96a5f8&at=ALt4Tm13W5-2gXPzNy4ydaLAvomw:1689352740394",
+			"opt_hash": "1c2fbd8232fe44b99cb34744e690227fbd58568eab2c6fae89e463c8dcbac955",
+			"gen_hash": "fbc657dad536ec4ee7a43599d9d6f497d68dda7ebff49fa6d3af66f3432d56df",
+			"download_dir": "diffusion_weights"
+		}
+	},
+
+	"train": {
+		"n_epoch": 120,
+		"train_print_freq": 500,
+		"val_freq": 1,
+		"val_print_freq": 50,
+		"optimizer": {
+			"type": "adam",
+			"lr": 1e-4
+		},
+		"sheduler": {
+			"lr_policy": "linear",
+			"n_steps": 3,
+			"gamma": 0.1
+		}
+	},
+	"wandb": {
+		"project": "ddpm-RS-CDHead"
+	}
 }
