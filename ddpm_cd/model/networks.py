@@ -5,12 +5,11 @@ import torch.nn as nn
 from torch.nn import init
 from torch.nn import modules
 logger = logging.getLogger('base')
-from model.cd_modules.cd_head import cd_head
-from model.cd_modules.cd_head_v2 import cd_head_v2
+from .cd_modules.cd_head import cd_head
+from .cd_modules.cd_head_v2 import cd_head_v2
 ####################
 # initialize
 ####################
-
 
 def weights_init_normal(m, std=0.02):
     classname = m.__class__.__name__

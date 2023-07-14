@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.padding import ReplicationPad2d
-from model.cd_modules.psp import _PSPModule
+from .psp import _PSPModule
 
 def get_in_channels(feat_scales, inner_channel, channel_multiplier):
     '''
