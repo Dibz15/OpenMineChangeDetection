@@ -107,7 +107,10 @@
             "image_size": 256,
             "channels": 3, //sample channel
             "loss": "l2", //options "l1" or "l2"
-            "conditional": false // unconditional generation or unconditional generation(super_resolution)
+            "conditional": false, // unconditional generation or unconditional generation(super_resolution)
+            "download": true,
+            "opt_url": "https://drive.google.com/uc?export=download&id=1b-9WoBh6YFzDetyY4_sndS6D3Z1sYWNv&confirm=t&uuid=6e5fbc22-521e-49c9-bb8d-51e825c5ec18&at=ALt4Tm1B-bRzpRX6x0BzMf-pLawk:1689352680050",
+            "gen_url": "https://drive.google.com/uc?export=download&id=1Cd26moxKCZ1VAuPMDXQ6OYlpyZDloQbz&confirm=t&uuid=160f6c0d-6730-4d8a-a183-ba237e96a5f8&at=ALt4Tm13W5-2gXPzNy4ydaLAvomw:1689352740394"   
         }
     },
     
