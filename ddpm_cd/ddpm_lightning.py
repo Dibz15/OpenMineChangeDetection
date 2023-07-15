@@ -228,6 +228,7 @@ class CD(pl.LightningModule):
         self.running_metric = ConfuseMatrixMeter(n_class=opt['model_cd']['out_channels'])
         self.len_train_dataloader = opt["len_train_dataloader"]
         self.len_val_dataloader = opt["len_val_dataloader"]
+        self.exp_lr_scheduler_netCD = None
 
     def forward(self, batch):
         # Feeding data to diffusion model and get features
@@ -343,7 +344,8 @@ class CD(pl.LightningModule):
             raise NotImplementedError(
                 'Optimizer [{:s}] not implemented'.format(self.opt['train']["optimizer"]["type"]))
 
-        self.exp_lr_scheduler_netCD = get_scheduler(optimizer=self.optCD, args=self.opt['train'])
+        if self.exp_lr_scheduler_netCD is None:
+            self.exp_lr_scheduler_netCD = get_scheduler(optimizer=self.optCD, args=self.opt['train'])
 
         return [self.optCD], [self.exp_lr_scheduler_netCD]
 
@@ -395,6 +397,7 @@ class CD(pl.LightningModule):
 
     def on_load_checkpoint(self, checkpoint):
         if 'scheduler' in checkpoint:
+            self.configure_optimizers()
             self.exp_lr_scheduler_netCD.load_state_dict(checkpoint['scheduler'])
     # Saving the network parameters
     # def save_network(self, epoch, is_best_model = False):
