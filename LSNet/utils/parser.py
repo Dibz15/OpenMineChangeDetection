@@ -1,12 +1,11 @@
 import argparse as ag
 import json
+from collections import OrderedDict
 
 def get_parser_with_args(metadata_json='metadata.json'):
-    parser = ag.ArgumentParser(description='Training change detection network')
-
-    with open(metadata_json, 'r') as fin:
-        metadata = json.load(fin)
-        parser.set_defaults(**metadata)
-        return parser, metadata
-
-    return None
+    json_str = ''
+    with open(metadata_json, 'r') as f:
+        for line in f:
+            json_str += line
+    opt = json.loads(json_str, object_pairs_hook=OrderedDict)
+    return opt

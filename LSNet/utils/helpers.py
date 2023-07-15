@@ -3,10 +3,10 @@ import torch
 import torch.utils.data
 import torch.nn as nn
 import numpy as np
-from utils.dataloaders import (full_path_loader, full_test_loader, CDDloader)
-from utils.metrics import jaccard_loss, dice_loss
-from utils.losses import hybrid_loss,contra_hybrid_loss
-from models.Models import LSNet_diffFPN,LSNet_thin_diffFPN,LSNet_denseFPN
+from .dataloaders import (full_path_loader, full_test_loader, CDDloader)
+from .metrics import jaccard_loss, dice_loss
+from .losses import hybrid_loss,contra_hybrid_loss
+from ..models.Models import LSNet_diffFPN,LSNet_thin_diffFPN,LSNet_denseFPN
 logging.basicConfig(level=logging.INFO)
 
 def initialize_metrics():

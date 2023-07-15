@@ -1,8 +1,8 @@
 import torch.nn as nn
 import torch
-from models.CGNet import *
+from .CGNet import *
 import warnings
-from models.CoordAttention import CoordAtt
+from .CoordAttention import CoordAtt
 warnings.filterwarnings('ignore')
 
 class up(nn.Module):

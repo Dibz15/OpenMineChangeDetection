@@ -1,9 +1,8 @@
 import torch.nn
 import torch.nn.functional as F
-from utils.parser import get_parser_with_args
-from utils.metrics import FocalLoss, dice_loss
-parser, metadata = get_parser_with_args()
-opt = parser.parse_args()
+from .parser import get_parser_with_args
+from .metrics import FocalLoss, dice_loss
+
 class ContrastiveLoss(torch.nn.Module):
     def __init__(self):
         super(ContrastiveLoss, self).__init__()

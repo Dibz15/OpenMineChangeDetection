@@ -1,7 +1,7 @@
 import os
 import torch.utils.data as data
 from PIL import Image
-from utils import transforms as tr
+from . import transforms as tr
 import cv2
 
 '''

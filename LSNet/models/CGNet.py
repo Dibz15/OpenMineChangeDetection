@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from models.CoordAttention import CoordAtt
+from .CoordAttention import CoordAtt
 # from mmcv.cnn import build_conv_layer, build_norm_layer
 
 class InputInjection(nn.Module):

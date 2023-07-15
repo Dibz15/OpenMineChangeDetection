@@ -6,11 +6,11 @@
   "num_channel": 3,
   "EF": false,
   "epochs": 101,
-  "batch_size": 12,
+  "batch_size": 1,
   "learning_rate": 1e-3,
-  "model_name": "denseFPN",
+  "model_name": "diffFPN",
   "loss_function": "contra_hybrid",
-  "dataset_dir": "data/Real/subset/",
+  "dataset_dir": "OMS2CD",
   "weight_dir": "./outputs/",
   "log_dir": "./log/"
 }
