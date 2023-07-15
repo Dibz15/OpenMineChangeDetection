@@ -27,7 +27,7 @@
 			"dataroot": "OMS2CD",
 			"resolution": 256,
 			"batch_size": 6,
-			"num_workers": 0,
+			"num_workers": 8,
 			"use_shuffle": true,
 			"data_len": -1
 		},
