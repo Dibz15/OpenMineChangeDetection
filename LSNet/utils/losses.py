@@ -91,3 +91,9 @@ class contra_hybrid_loss(torch.nn.Module):
         loss = bce_loss + dice_loss
 
         return dice_loss, bce_loss, loss
+
+    def to(self, device):
+        super().to(device)
+        self.contra = self.contra.to(device)
+        self.focal = self.focal.to(device)
+        self.dice = self.dice.to(device)
