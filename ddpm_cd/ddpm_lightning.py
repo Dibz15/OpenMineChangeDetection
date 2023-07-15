@@ -381,17 +381,13 @@ class CD(pl.LightningModule):
         return checkpoint
 
     def load_state_dict(self, state_dict, strict=True):
-        # model_state = self.state_dict()
-        # for name, param in model_state.items():
-        #     if name in state_dict:
-        #         input_param = state_dict[name]
-        #         if input_param.shape == param.shape:
-        #             param.copy_(input_param)
-        #             continue
         # Make sure to call the super().load_state_dict() function with strict=False to prevent it from throwing an error
         super().load_state_dict(state_dict, strict=False)
         self.diffusion_model = DDPM(self.opt)
         self.diffusion_model.load_network()
+        self.diffusion_model.eval()  # Freeze the diffusion model
+        for param in self.diffusion_model.parameters():
+            param.requires_grad = False
 
     def on_load_checkpoint(self, checkpoint):
         if 'scheduler' in checkpoint:
