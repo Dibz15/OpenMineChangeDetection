@@ -391,10 +391,10 @@ class CD(pl.LightningModule):
         for param in self.diffusion_model.parameters():
             param.requires_grad = False
 
-    def on_load_checkpoint(self, checkpoint):
-        if 'scheduler' in checkpoint:
-            self.configure_optimizers()
-            self.exp_lr_scheduler_netCD.load_state_dict(checkpoint['scheduler'])
+    # def on_load_checkpoint(self, checkpoint):
+    #     if 'scheduler' in checkpoint:
+    #         self.configure_optimizers()
+    #         self.exp_lr_scheduler_netCD.load_state_dict(checkpoint['scheduler'])
     # Saving the network parameters
     # def save_network(self, epoch, is_best_model = False):
     #     cd_gen_path = os.path.join(
