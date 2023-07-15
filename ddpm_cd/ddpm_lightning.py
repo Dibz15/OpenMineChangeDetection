@@ -1,7 +1,7 @@
 import lightning as pl
 import torch
 import torch.nn as nn
-import model.networks as networks
+from .model import networks as networks
 from collections import OrderedDict
 from ..utils import download_and_verify
 import logging
@@ -11,10 +11,11 @@ from collections import OrderedDict
 from .misc.metric_tools import ConfuseMatrixMeter
 from .misc.metric_tools import ConfuseMatrixMeter
 from .misc.torchutils import get_scheduler
-import data as Data
-import model as Model
-import core.logger as Logger
-import core.metrics as Metrics
+from . import data as Data
+from . import model as Model
+
+from .core import logger as Logger
+from .core import metrics as Metrics
 
 logger = logging.getLogger('base')
 
@@ -272,7 +273,7 @@ class CD(pl.LightningModule):
     
     def on_train_epoch_end(self):
         self._collect_epoch_states()
-        logs = change_detection.get_current_log()
+        logs = self.get_current_log()
         self.log_dict({
             'training/mF1': logs['epoch_acc'],
             'training/mIoU': logs['miou'],
