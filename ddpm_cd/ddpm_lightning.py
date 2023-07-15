@@ -4,7 +4,6 @@ import torch.nn as nn
 from .model import networks as networks
 from collections import OrderedDict
 from ..utils import download_and_verify
-import logging
 import os
 from torchmetrics.classification import f_beta
 from collections import OrderedDict
@@ -13,11 +12,6 @@ from .misc.metric_tools import ConfuseMatrixMeter
 from .misc.torchutils import get_scheduler
 from . import data as Data
 from . import model as Model
-
-from .core import logger as Logger
-from .core import metrics as Metrics
-
-logger = logging.getLogger('base')
 
 class DDPM(pl.LightningModule):
     def __init__(self, opt):
