@@ -6,7 +6,7 @@
   "num_channel": 3,
   "EF": false,
   "epochs": 101,
-  "batch_size": 1,
+  "batch_size": 6,
   "learning_rate": 1e-3,
   "model_name": "diffFPN",
   "loss_function": "contra_hybrid",
