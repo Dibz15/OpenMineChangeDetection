@@ -181,17 +181,18 @@ class DDPM(pl.LightningModule):
             network = self.netG
             if isinstance(self.netG, nn.DataParallel):
                 network = network.module
+            # network.load_state_dict(torch.load(
+            #     self.gen_file, 
+            #     map_location=self.device), 
+            #     strict=(not self.opt['model']['finetune_norm']))
+            print(f'Loading DDPM gen state dict from {self.gen_file}')
             network.load_state_dict(torch.load(
                 self.gen_file, 
                 map_location=self.device), 
-                strict=(not self.opt['model']['finetune_norm']))
-
-            network.load_state_dict(torch.load(
-                self.gen_file, 
-                map_location=self.device), 
-                strict=False)
+                strict=True)
                 
-            if self.opt['phase'] == 'train':
+            if self.opt['phase'] == 'train' and self.opt['path']['resume_opt']:
+                print(f'Loading DDPM opt state dict from {self.opt_file}')
                 #optimizer
                 opt = torch.load(self.opt_file, map_location=self.device)
                 self.optG.load_state_dict(opt['optimizer'])
@@ -429,24 +430,26 @@ class CD(pl.LightningModule):
     #         torch.save(opt_state, best_cd_opt_path)
 
     # Loading pre-trained CD network
-    # def load_network(self):
-    #     load_path = self.opt['path_cd']['resume_state']
-    #     if load_path is not None:
-    #         gen_path = '{}_gen.pth'.format(load_path)
-    #         opt_path = '{}_opt.pth'.format(load_path)
+    def load_network(self):
+        load_path = self.opt['path_cd']['finetune_path']
+        if load_path is not None:
+            gen_path = os.path.join(load_path, 'best_cd_model_gen.pth')
+            opt_path = os.path.join(load_path, 'best_cd_model_opt.pth')
             
-    #         # change detection model
-    #         network = self.netCD
-    #         if isinstance(self.netCD, nn.DataParallel):
-    #             network = network.module
-    #         network.load_state_dict(torch.load(
-    #             gen_path), strict=True)
+            # change detection model
+            network = self.netCD
+            if isinstance(self.netCD, nn.DataParallel):
+                network = network.module
+            print(f'Loading CD gen state dict from {gen_path}.')
+            network.load_state_dict(torch.load(
+                gen_path), strict=True)
             
-    #         if self.opt['phase'] == 'train':
-    #             opt = torch.load(opt_path)
-    #             self.optCD.load_state_dict(opt['optimizer'])
-    #             self.begin_step = opt['iter']
-    #             self.begin_epoch = opt['epoch']
+            if self.opt['phase'] == 'train' and self.opt['path_cd']['resume_opt']:
+                print(f'Loading CD opt state dict from {opt_path}.') 
+                opt = torch.load(opt_path)
+                self.optCD.load_state_dict(opt['optimizer'])
+                self.begin_step = opt['iter']
+                self.begin_epoch = opt['epoch']
     
     # Functions related to computing performance metrics for CD
     def _update_metric(self):
