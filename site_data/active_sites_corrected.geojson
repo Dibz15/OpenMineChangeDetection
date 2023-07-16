@@ -1,0 +1,616 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 801,
+                "facility_id": "COM00801.00",
+                "facility_name": "Mianchi",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.12_1",
+                "GID_2": "CHN.12.11_1",
+                "GID_3": "CHN.12.11.3_1",
+                "GID_4": null,
+                "source_id": "det_1273",
+                "comment": null
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            111.58342862811342,
+                            34.776711393587725
+                        ],
+                        [
+                            111.67326015582059,
+                            34.776711393587725
+                        ],
+                        [
+                            111.67326015582059,
+                            34.86654292129487
+                        ],
+                        [
+                            111.58342862811342,
+                            34.86654292129487
+                        ],
+                        [
+                            111.58342862811342,
+                            34.776711393587725
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 69,
+                "facility_id": "COM00069.00",
+                "facility_name": "Artemyevsky",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Zinc",
+                "commodities_products": "Copper, Zinc, Gold, Silver",
+                "facility_equipment": "Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "Kazakhstan",
+                "GID_0": "KAZ",
+                "GID_1": "KAZ.5_1",
+                "GID_2": "KAZ.5.11_1",
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1121",
+                "comment": null
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            81.73768853249801,
+                            50.55510151019143
+                        ],
+                        [
+                            81.82752006020517,
+                            50.55510151019143
+                        ],
+                        [
+                            81.82752006020517,
+                            50.644933037898575
+                        ],
+                        [
+                            81.73768853249801,
+                            50.644933037898575
+                        ],
+                        [
+                            81.73768853249801,
+                            50.55510151019143
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1359,
+                "facility_id": "COM01359.00",
+                "facility_name": "Werris Creek",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Coal",
+                "commodities_products": "Coal",
+                "facility_equipment": "Open cut",
+                "production_start": 2005,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2020,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "Australia",
+                "GID_0": "AUS",
+                "GID_1": "AUS.5_1",
+                "GID_2": "AUS.5.85_1",
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1542",
+                "comment": null
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            150.58843979210744,
+                            -31.430294137056073
+                        ],
+                        [
+                            150.67827131981457,
+                            -31.430294137056073
+                        ],
+                        [
+                            150.67827131981457,
+                            -31.340462609348926
+                        ],
+                        [
+                            150.58843979210744,
+                            -31.340462609348926
+                        ],
+                        [
+                            150.58843979210744,
+                            -31.430294137056073
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 5
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Guizhou_Maige"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            106.41541242384926,
+                            26.727072021896404
+                        ],
+                        [
+                            106.41541242384926,
+                            26.680603388488535
+                        ],
+                        [
+                            106.47612488479507,
+                            26.680603388488535
+                        ],
+                        [
+                            106.47612488479507,
+                            26.727072021896404
+                        ],
+                        [
+                            106.41541242384926,
+                            26.727072021896404
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 25
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Guizhou_Xiuwen"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            106.58834555798319,
+                            26.81290814090329
+                        ],
+                        [
+                            106.58834555798319,
+                            26.76040818692489
+                        ],
+                        [
+                            106.66026601975727,
+                            26.76040818692489
+                        ],
+                        [
+                            106.66026601975727,
+                            26.81290814090329
+                        ],
+                        [
+                            106.58834555798319,
+                            26.81290814090329
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 26
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Pingguo_Burong"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            107.44387483079743,
+                            23.450752163200875
+                        ],
+                        [
+                            107.44387483079743,
+                            23.421248969966854
+                        ],
+                        [
+                            107.47434937417364,
+                            23.421248969966854
+                        ],
+                        [
+                            107.47434937417364,
+                            23.450752163200875
+                        ],
+                        [
+                            107.44387483079743,
+                            23.450752163200875
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 24
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Pingguo_Anren"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            107.41969604504129,
+                            23.476878091323144
+                        ],
+                        [
+                            107.41969604504129,
+                            23.453556873205045
+                        ],
+                        [
+                            107.4717573268926,
+                            23.453556873205045
+                        ],
+                        [
+                            107.4717573268926,
+                            23.476878091323144
+                        ],
+                        [
+                            107.41969604504129,
+                            23.476878091323144
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 27
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Olympic Dam"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            136.78636698606613,
+                            -30.39239081949686
+                        ],
+                        [
+                            136.78636698606613,
+                            -30.480602236608895
+                        ],
+                        [
+                            136.9230249284525,
+                            -30.480602236608895
+                        ],
+                        [
+                            136.9230249284525,
+                            -30.39239081949686
+                        ],
+                        [
+                            136.78636698606613,
+                            -30.39239081949686
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 28
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Gunnedah_sugarloaf"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            150.09125160507597,
+                            -30.964437587939443
+                        ],
+                        [
+                            150.09125160507597,
+                            -30.99761951408653
+                        ],
+                        [
+                            150.14245460768888,
+                            -30.99761951408653
+                        ],
+                        [
+                            150.14245460768888,
+                            -30.964437587939443
+                        ],
+                        [
+                            150.09125160507597,
+                            -30.964437587939443
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 29
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Gunnedah_west"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            150.19000953606724,
+                            -30.94381955913005
+                        ],
+                        [
+                            150.19000953606724,
+                            -30.960167452017295
+                        ],
+                        [
+                            150.21179514494224,
+                            -30.960167452017295
+                        ],
+                        [
+                            150.21179514494224,
+                            -30.94381955913005
+                        ],
+                        [
+                            150.19000953606724,
+                            -30.94381955913005
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 30
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Gunnedah_vickery"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            150.2412488604022,
+                            -30.734324285389803
+                        ],
+                        [
+                            150.2412488604022,
+                            -30.788728090519413
+                        ],
+                        [
+                            150.30185988405043,
+                            -30.788728090519413
+                        ],
+                        [
+                            150.30185988405043,
+                            -30.734324285389803
+                        ],
+                        [
+                            150.2412488604022,
+                            -30.734324285389803
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 31
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Gunnedah_leard"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            150.22344130057604,
+                            -30.66375181293045
+                        ],
+                        [
+                            150.22344130057604,
+                            -30.58115010223314
+                        ],
+                        [
+                            150.1319598129993,
+                            -30.58115010223314
+                        ],
+                        [
+                            150.1319598129993,
+                            -30.66375181293045
+                        ],
+                        [
+                            150.22344130057604,
+                            -30.66375181293045
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 32
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Maules Creek"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            150.16845155322045,
+                            -30.60075052685184
+                        ],
+                        [
+                            150.16845155322045,
+                            -30.51679896290188
+                        ],
+                        [
+                            150.06948931893277,
+                            -30.51679896290188
+                        ],
+                        [
+                            150.06948931893277,
+                            -30.60075052685184
+                        ],
+                        [
+                            150.16845155322045,
+                            -30.60075052685184
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 33
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Narrabri"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            149.87461378979282,
+                            -30.502227123965824
+                        ],
+                        [
+                            149.87461378979282,
+                            -30.53417659431927
+                        ],
+                        [
+                            149.92312334324367,
+                            -30.53417659431927
+                        ],
+                        [
+                            149.92312334324367,
+                            -30.502227123965824
+                        ],
+                        [
+                            149.87461378979282,
+                            -30.502227123965824
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 34
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Moa_sotto"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            -75.01844366487903,
+                            20.622703330608132
+                        ],
+                        [
+                            -75.01844366487903,
+                            20.545182967380967
+                        ],
+                        [
+                            -74.90347512589067,
+                            20.545182967380967
+                        ],
+                        [
+                            -74.90347512589067,
+                            20.622703330608132
+                        ],
+                        [
+                            -75.01844366487903,
+                            20.622703330608132
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 35
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "facility_name": "Moa_gorda"
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            -74.90765878814366,
+                            20.633501562643602
+                        ],
+                        [
+                            -74.90765878814366,
+                            20.584282346065066
+                        ],
+                        [
+                            -74.84352649182101,
+                            20.584282346065066
+                        ],
+                        [
+                            -74.84352649182101,
+                            20.633501562643602
+                        ],
+                        [
+                            -74.90765878814366,
+                            20.633501562643602
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 36
+        }
+    ]
+}

@@ -1,0 +1,956 @@
+{
+    "type": "FeatureCollection",
+    "name": "active_sites",
+    "crs": {
+        "type": "name",
+        "properties": {
+            "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+        }
+    },
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 69,
+                "facility_id": "COM00069.00",
+                "facility_name": "Artemyevsky",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Zinc",
+                "commodities_products": "Copper, Zinc, Gold, Silver",
+                "facility_equipment": "Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "Kazakhstan",
+                "GID_0": "KAZ",
+                "GID_1": "KAZ.5_1",
+                "GID_2": "KAZ.5.11_1",
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1121",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        81.7826042963516,
+                        50.600017274045
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 509,
+                "facility_id": "COM00509.00",
+                "facility_name": "Guizhou",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine, Refinery, Smelter",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite, Alumina, Aluminium",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": 1978,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.8_1",
+                "GID_2": "CHN.8.3_1",
+                "GID_3": "CHN.8.3.1_1 ; CHN.8.3.3_1 ; CHN.8.3.5_1",
+                "GID_4": null,
+                "source_id": "det_1274",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        106.612148404122,
+                        26.7978066392429
+                    ],
+                    [
+                        106.448887747099,
+                        26.6985167191262
+                    ],
+                    [
+                        106.66242918135,
+                        26.6842599854759
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 512,
+                "facility_id": "COM00512.00",
+                "facility_name": "Gunnedah",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine, Refinery",
+                "primary_commodity": "Coal",
+                "commodities_products": "Coal",
+                "facility_equipment": "Open cut",
+                "production_start": 2002,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2020,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "Australia",
+                "GID_0": "AUS",
+                "GID_1": "AUS.5_1",
+                "GID_2": "AUS.5.59_1 ; AUS.5.97_1",
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1541",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        150.194268991265,
+                        -30.6316338187051
+                    ],
+                    [
+                        150.247429571578,
+                        -30.7648264116501
+                    ],
+                    [
+                        150.124609265167,
+                        -30.975403542762
+                    ],
+                    [
+                        150.202861305906,
+                        -30.9478432233626
+                    ],
+                    [
+                        150.173542160156,
+                        -30.7371111948896
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 548,
+                "facility_id": "COM00548.00",
+                "facility_name": "Huaxing",
+                "facility_other_names": "Shanxi Huaxing",
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine, Refinery",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite, Alumina",
+                "facility_equipment": "Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.25_1",
+                "GID_2": "CHN.25.6_1",
+                "GID_3": "CHN.25.6.12_1",
+                "GID_4": "NA",
+                "source_id": "det_1274",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 595,
+                "facility_id": "COM00595.00",
+                "facility_name": "Jiaozuo",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.12_1",
+                "GID_2": "CHN.12.3_1",
+                "GID_3": "NA",
+                "GID_4": "NA",
+                "source_id": "det_1274",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 755,
+                "facility_id": "COM00755.00",
+                "facility_name": "Luoyang",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.12_1",
+                "GID_2": "CHN.12.7_1",
+                "GID_3": "NA",
+                "GID_4": "NA",
+                "source_id": "det_1273",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 783,
+                "facility_id": "COM00783.00",
+                "facility_name": "Maules Creek",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Coal",
+                "commodities_products": "Coal",
+                "facility_equipment": "Open cut",
+                "production_start": 2015,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2020,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "Australia",
+                "GID_0": "AUS",
+                "GID_1": "AUS.5_1",
+                "GID_2": "AUS.5.97_1",
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1539",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        150.124734196418,
+                        -30.5620399925617
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 801,
+                "facility_id": "COM00801.00",
+                "facility_name": "Mianchi",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.12_1",
+                "GID_2": "CHN.12.11_1",
+                "GID_3": "CHN.12.11.3_1",
+                "GID_4": null,
+                "source_id": "det_1273",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        111.628344391967,
+                        34.8216271574413
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 885,
+                "facility_id": "COM00885.00",
+                "facility_name": "Narrabri",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Coal",
+                "commodities_products": "Coal",
+                "facility_equipment": "Underground",
+                "production_start": 2012,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2020,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "Australia",
+                "GID_0": "AUS",
+                "GID_1": "AUS.5_1",
+                "GID_2": "AUS.5.97_1",
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1540",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        149.895206981496,
+                        -30.5194191595718
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 937,
+                "facility_id": "COM00937.00",
+                "facility_name": "Olympic Dam",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine, Refinery, Smelter",
+                "primary_commodity": "Copper",
+                "commodities_products": "Copper, Coper Anodes, Copper cathodes, Uranium oxide, Gold, Silver",
+                "facility_equipment": "Underground, Flash Furnace, SX-EW, Grinding circuits",
+                "production_start": 1988,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "Australia",
+                "GID_0": "AUS",
+                "GID_1": "AUS.8_1",
+                "GID_2": "AUS.8.61_1",
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1134",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        136.870109008325,
+                        -30.4464278902638
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 984,
+                "facility_id": "COM00984.00",
+                "facility_name": "Pingdingshan",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.12_1",
+                "GID_2": "CHN.12.9_1",
+                "GID_3": "NA",
+                "GID_4": "NA",
+                "source_id": "det_1274",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 986,
+                "facility_id": "COM00986.00",
+                "facility_name": "Pingguo",
+                "facility_other_names": "Guangxi Plant, Pingguo Plant, Guangxi branch",
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine, Refinery, Smelter",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite, Alumina, Aluminium",
+                "facility_equipment": "Open pit",
+                "production_start": 1994,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.7_1",
+                "GID_2": "CHN.7.1_1",
+                "GID_3": "CHN.7.1.8_1",
+                "GID_4": null,
+                "source_id": "det_1273",
+                "comment": "Primary aluminium Smelter closed in 2014"
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        107.619491776721,
+                        23.429680426709
+                    ],
+                    [
+                        107.479791645213,
+                        23.4358251789731
+                    ],
+                    [
+                        107.505042097885,
+                        23.3377882585297
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1130,
+                "facility_id": "COM01130.00",
+                "facility_name": "Sanmenxia",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.12_1",
+                "GID_2": "CHN.12.11_1",
+                "GID_3": "NA",
+                "GID_4": "NA",
+                "source_id": "det_1274",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1359,
+                "facility_id": "COM01359.00",
+                "facility_name": "Werris Creek",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Coal",
+                "commodities_products": "Coal",
+                "facility_equipment": "Open cut",
+                "production_start": 2005,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2020,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "Australia",
+                "GID_0": "AUS",
+                "GID_1": "AUS.5_1",
+                "GID_2": "AUS.5.85_1",
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1542",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                    [
+                        150.633355555961,
+                        -31.3853783732025
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1380,
+                "facility_id": "COM01380.00",
+                "facility_name": "Xiaoguan",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.12_1",
+                "GID_2": "CHN.12.16_1",
+                "GID_3": "NA",
+                "GID_4": "NA",
+                "source_id": "det_1273",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1381,
+                "facility_id": "COM01381.00",
+                "facility_name": "Xiaoyi",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.25_1",
+                "GID_2": "CHN.25.6_1",
+                "GID_3": "CHN.25.6.11_1",
+                "GID_4": "NA",
+                "source_id": "det_1273",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1385,
+                "facility_id": "COM01385.00",
+                "facility_name": "Xuchang",
+                "facility_other_names": "Yuzhong",
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.12_1",
+                "GID_2": "CHN.12.16_1",
+                "GID_3": "NA",
+                "GID_4": "NA",
+                "source_id": "det_1274",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1392,
+                "facility_id": "COM01392.00",
+                "facility_name": "Yangquan",
+                "facility_other_names": null,
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite",
+                "facility_equipment": "Open pit",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.25_1",
+                "GID_2": "CHN.25.10_1",
+                "GID_3": "NA",
+                "GID_4": "NA",
+                "source_id": "det_1274",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1435,
+                "facility_id": "COM01435.00",
+                "facility_name": "Zunyi",
+                "facility_other_names": "Zunyi Alumina, Zunyi Aluminum",
+                "sub_site_name": null,
+                "sub_site_other_names": null,
+                "facility_type": "Mine, Refinery, Smelter",
+                "primary_commodity": "Aluminium",
+                "commodities_products": "Bauxite, Alumina, Aluminium",
+                "facility_equipment": "Open pit, Underground",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": null,
+                "country": "China",
+                "GID_0": "CHN",
+                "GID_1": "CHN.8_1",
+                "GID_2": "CHN.8.9_1",
+                "GID_3": "NA",
+                "GID_4": "NA",
+                "source_id": "det_1274",
+                "comment": null
+            },
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": []
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1887,
+                "facility_id": "COM00828.01",
+                "facility_name": "Moa Project",
+                "facility_other_names": null,
+                "sub_site_name": "Moa Occidental",
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Nickel",
+                "commodities_products": "Nickel, Cobalt",
+                "facility_equipment": "Surface",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": 11.93,
+                "country": "Cuba",
+                "GID_0": "CUB",
+                "GID_1": null,
+                "GID_2": null,
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1432",
+                "comment": null
+            },
+            "geometry": null
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1888,
+                "facility_id": "COM00828.02",
+                "facility_name": "Moa Project",
+                "facility_other_names": null,
+                "sub_site_name": "Moa Oriental",
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Nickel",
+                "commodities_products": "Nickel, Cobalt",
+                "facility_equipment": "Surface",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": 15.31,
+                "country": "Cuba",
+                "GID_0": "CUB",
+                "GID_1": null,
+                "GID_2": null,
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1432",
+                "comment": null
+            },
+            "geometry": null
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1889,
+                "facility_id": "COM00828.03",
+                "facility_name": "Moa Project",
+                "facility_other_names": null,
+                "sub_site_name": "Yagrumaje Oeste",
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Nickel",
+                "commodities_products": "Nickel, Cobalt",
+                "facility_equipment": "Surface",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": 5.69,
+                "country": "Cuba",
+                "GID_0": "CUB",
+                "GID_1": null,
+                "GID_2": null,
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1432",
+                "comment": null
+            },
+            "geometry": null
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1890,
+                "facility_id": "COM00828.04",
+                "facility_name": "Moa Project",
+                "facility_other_names": null,
+                "sub_site_name": "Limestone Mud",
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Nickel",
+                "commodities_products": "Nickel, Cobalt",
+                "facility_equipment": "Surface",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": 8.05,
+                "country": "Cuba",
+                "GID_0": "CUB",
+                "GID_1": null,
+                "GID_2": null,
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1432",
+                "comment": null
+            },
+            "geometry": null
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1891,
+                "facility_id": "COM00828.05",
+                "facility_name": "Moa Project",
+                "facility_other_names": null,
+                "sub_site_name": "Camarioca Norte",
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Nickel",
+                "commodities_products": "Nickel, Cobalt",
+                "facility_equipment": "Surface",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": 20.07,
+                "country": "Cuba",
+                "GID_0": "CUB",
+                "GID_1": null,
+                "GID_2": null,
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1432",
+                "comment": null
+            },
+            "geometry": null
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1892,
+                "facility_id": "COM00828.06",
+                "facility_name": "Moa Project",
+                "facility_other_names": null,
+                "sub_site_name": "Camarioca Sur",
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Nickel",
+                "commodities_products": "Nickel, Cobalt",
+                "facility_equipment": "Surface",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": 23.67,
+                "country": "Cuba",
+                "GID_0": "CUB",
+                "GID_1": null,
+                "GID_2": null,
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1432",
+                "comment": null
+            },
+            "geometry": null
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1894,
+                "facility_id": "COM00828.08",
+                "facility_name": "Moa Project",
+                "facility_other_names": null,
+                "sub_site_name": "La Delta",
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Nickel",
+                "commodities_products": "Nickel, Cobalt",
+                "facility_equipment": "Surface",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": 13,
+                "country": "Cuba",
+                "GID_0": "CUB",
+                "GID_1": null,
+                "GID_2": null,
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1432",
+                "comment": null
+            },
+            "geometry": null
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "fid": 1895,
+                "facility_id": "COM00828.09",
+                "facility_name": "Moa Project",
+                "facility_other_names": null,
+                "sub_site_name": "Cantarrana",
+                "sub_site_other_names": null,
+                "facility_type": "Mine",
+                "primary_commodity": "Nickel",
+                "commodities_products": "Nickel, Cobalt",
+                "facility_equipment": "Surface",
+                "production_start": null,
+                "production_end": null,
+                "activity_status": "active",
+                "activity_status_year": 2019,
+                "surface_area_sq_km": null,
+                "concession_area_sq_km": 8.71,
+                "country": "Cuba",
+                "GID_0": "CUB",
+                "GID_1": null,
+                "GID_2": null,
+                "GID_3": null,
+                "GID_4": null,
+                "source_id": "det_1432",
+                "comment": null
+            },
+            "geometry": null
+        }
+    ]
+}
