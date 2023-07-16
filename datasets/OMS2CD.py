@@ -47,7 +47,8 @@ class OMS2CD(NonGeoDataset):
         stride: Union[int, Tuple[int, int], List[int]] = 128,
         tile_size: Union[int, Tuple[int, int], List[int]] = 256,
         tile_mode: str = "drop",
-        load_area_mask: bool = False
+        load_area_mask: bool = False,
+        index_no_mask: bool = True
     ) -> None:
         assert bands in ['rgb', 'all']
         assert split in ['train', 'val', 'test', 'all']
@@ -55,6 +56,7 @@ class OMS2CD(NonGeoDataset):
         self.root_dir = root
         self.bands = bands
         self.split = split
+        self.index_no_mask = index_no_mask
 
         self.mean = self.normalisation_map[bands][0]
         self.std = self.normalisation_map[bands][1]
@@ -81,7 +83,6 @@ class OMS2CD(NonGeoDataset):
 
         self.load_area_mask = load_area_mask
         self.tile_mode = tile_mode
-        self.file_list = self._build_index()
         self.total_dataset_length, self.chip_index_map, self.image_shapes_map = self._calculate_dataset_len()
 
     def _build_index(self):
@@ -174,21 +175,49 @@ class OMS2CD(NonGeoDataset):
                 if image1.shape[1] < self.tile_shape[0] or image1.shape[2] < self.tile_shape[1]:
                     continue
                 image1_tensor = torch.from_numpy(image1)
-                raw_img_tensor = torch.cat([image1_tensor, image1_tensor])
-                tiler = Tiler(data_shape=raw_img_tensor.shape,
-                      tile_shape=(raw_img_tensor.shape[0], self.tile_shape[0], self.tile_shape[1]),
-                      overlap=(raw_img_tensor.shape[0]-1, self.tile_overlap[0], self.tile_overlap[1]),
-                      mode=self.tile_mode,
-                      channel_dimension=0)
+                
+                if self.index_no_mask:
+                    raw_img_tensor = torch.cat([image1_tensor, image1_tensor])
+                else:
+                    mask, _ = self._load_image(files[2])
+                    mask_tensor = torch.from_numpy(mask)
+                    raw_img_tensor = torch.cat([image1_tensor, image1_tensor, mask_tensor])
 
+                tiler = Tiler(data_shape=raw_img_tensor.shape,
+                    tile_shape=(raw_img_tensor.shape[0], self.tile_shape[0], self.tile_shape[1]),
+                    overlap=(raw_img_tensor.shape[0]-1, self.tile_overlap[0], self.tile_overlap[1]),
+                    mode=self.tile_mode,
+                    channel_dimension=0)
                 image_shapes[i] = list(raw_img_tensor.shape)
                 tile_shape = tiler.get_mosaic_shape(with_channel_dim=True)
                 num_tiles = tile_shape[0] * tile_shape[1] * tile_shape[2]
-                # Map chip index to file index
-                for j in range(total_tiles, total_tiles + num_tiles):
-                    index_map[j] = (i, j - total_tiles)
 
-                total_tiles += num_tiles
+                if self.index_no_mask:
+                    # Map chip index to file index
+                    for j in range(total_tiles, total_tiles + num_tiles):
+                        index_map[j] = (i, j - total_tiles)
+
+                    total_tiles += num_tiles
+                else:
+                    # Skip files that don't have mask data
+                    def is_in_aoi(mask_tile):
+                        num_pixels_in_aoi = mask_tile.sum()
+                        total_pixels = mask_tile.numel()
+                        return num_pixels_in_aoi >= 0.0005 * total_pixels
+                    
+                    full_img_numpy = raw_img_tensor.cpu().numpy()
+                    full_image_shape = image_shapes[i].copy()
+                    full_image_shape[0] += 1 # Add mask channel to channel size
+
+                    # When index_no_mask is False, we don't want to index any tiles
+                    # that don't have sufficient white mask pixels
+                    for j in range(total_tiles, total_tiles + num_tiles):
+                        chip_index = j - total_tiles
+                        img_mask_tile = tiler.get_tile(full_img_numpy, chip_index, copy_data = False)
+                        mask_tile = img_mask_tile[full_image_shape[0] - 1, :, :]
+                        if is_in_aoi(mask_tile):
+                            index_map[total_tiles] = (i, chip_index)
+                            total_tiles += 1
 
         return total_tiles, index_map, image_shapes
 
