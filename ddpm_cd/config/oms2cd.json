@@ -20,7 +20,8 @@
 		"results": "results",
 		"checkpoint": "checkpoint",
 		"resume_state": null,
-		"resume_opt": false
+		"resume_opt": false,
+		"finetune_path": "diffusion_weights"
 	},
 
 	"datasets": {
