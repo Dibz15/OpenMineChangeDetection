@@ -224,9 +224,14 @@ class CD(pl.LightningModule):
         else:
             raise NotImplementedError()
 
-        self.log_vars = OrderedDict()
+        self.train_vars = OrderedDict()
+        self.val_vars = OrderedDict()
+        self.test_vars = OrderedDict()
 
-        self.running_metric = ConfuseMatrixMeter(n_class=opt['model_cd']['out_channels'])
+        self.train_metric = ConfuseMatrixMeter(n_class=opt['model_cd']['out_channels'])
+        self.val_metric = ConfuseMatrixMeter(n_class=opt['model_cd']['out_channels'])
+        self.test_metric = ConfuseMatrixMeter(n_class=opt['model_cd']['out_channels'])
+        
         self.len_train_dataloader = opt["len_train_dataloader"]
         self.len_val_dataloader = opt["len_val_dataloader"]
         self.exp_lr_scheduler_netCD = None
@@ -261,15 +266,13 @@ class CD(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         self.pred_cm = self.forward(batch)
         l_cd = self.loss_func(self.pred_cm, batch["mask"].long())
-        
-        self._collect_running_batch_states()
-        
+        self._collect_running_batch_states(self.train_metric, self.train_vars)
         self.log('train_loss', l_cd)
         return l_cd
     
     def on_train_epoch_end(self):
-        self._collect_epoch_states()
-        logs = self.get_current_log()
+        self._collect_epoch_states(self.train_metric, self.train_vars)
+        logs = self.train_vars
         self.log_dict({
             'training/mF1': logs['epoch_acc'],
             'training/mIoU': logs['miou'],
@@ -279,23 +282,18 @@ class CD(pl.LightningModule):
             'training/change-IoU': logs['iou_1'],
             'training/no-change-IoU': logs['iou_0'],
         })
-        self._clear_cache()
-        # self._update_lr_schedulers()
+        self._clear_cache(self.train_metric)
 
     def validation_step(self, batch, batch_idx):
-        with torch.no_grad():
-            self.pred_cm = self(batch)
-            l_cd = self.loss_func(self.pred_cm, batch["mask"].long())
-            self.log_vars['l_cd'] = l_cd.item()
-
-        l_cd = self.log_vars['l_cd']
-        self._collect_running_batch_states()
+        self.pred_cm = self(batch)
+        l_cd = self.loss_func(self.pred_cm, batch["mask"].long())
+        self._collect_running_batch_states(self.val_metric, self.val_vars)
         self.log('val_loss', l_cd)
         return l_cd
 
     def on_validation_epoch_end(self):
-        self._collect_epoch_states()
-        logs = self.get_current_log()
+        self._collect_epoch_states(self.val_metric, self.val_vars)
+        logs = self.val_vars
         self.log_dict({
             'validation/mF1': logs['epoch_acc'],
             'validation/mIoU': logs['miou'],
@@ -305,22 +303,18 @@ class CD(pl.LightningModule):
             'validation/change-IoU': logs['iou_1'],
             'validation/no-change-IoU': logs['iou_0'],
         })
-        self._clear_cache()
+        self._clear_cache(self.val_metric)
 
     def test_step(self, batch, batch_idx):
-        with torch.no_grad():
-            self.pred_cm = self(batch)
-            l_cd = self.loss_func(self.pred_cm, batch["mask"].long())
-            self.log_vars['l_cd'] = l_cd.item()
-
-        l_cd = self.log_vars['l_cd']
-        self._collect_running_batch_states()
+        self.pred_cm = self(batch)
+        l_cd = self.loss_func(self.pred_cm, batch["mask"].long())
+        self._collect_running_batch_states(self.test_metric, self.test_vars)
         self.log('test_loss', l_cd)
         return l_cd
 
     def on_test_epoch_end(self):
-        self._collect_epoch_states()
-        logs = self.get_current_log()
+        self._collect_epoch_states(self.test_metric, self.test_vars)
+        logs = self.test_vars
         self.log_dict({
             'test/mF1': logs['epoch_acc'],
             'test/mIoU': logs['miou'],
@@ -330,7 +324,7 @@ class CD(pl.LightningModule):
             'test/change-IoU': logs['iou_1'],
             'test/no-change-IoU': logs['iou_0'],
         })
-        self._clear_cache()
+        self._clear_cache(self.test_metric)
 
     def configure_optimizers(self):
         optim_cd_params = list(self.netCD.parameters())
@@ -355,10 +349,6 @@ class CD(pl.LightningModule):
         self.feats_A = feats_A
         self.feats_B = feats_B
         self.data = data
-
-    # Get current log
-    def get_current_log(self):
-        return self.log_vars
 
     # Get current visuals
     def get_current_visuals(self):
@@ -452,33 +442,33 @@ class CD(pl.LightningModule):
                 self.begin_epoch = opt['epoch']
     
     # Functions related to computing performance metrics for CD
-    def _update_metric(self):
+    def _update_metric(self, metric):
         """
         update metric
         """
         G_pred = self.pred_cm.detach()
         G_pred = torch.argmax(G_pred, dim=1)
 
-        current_score = self.running_metric.update_cm(pr=G_pred.cpu().numpy(), gt=self.data['mask'].detach().cpu().numpy())
+        current_score = metric.update_cm(pr=G_pred.cpu().numpy(), gt=self.data['mask'].detach().cpu().numpy())
         return current_score
     
     # Collecting status of the current running batch
-    def _collect_running_batch_states(self):
-        self.running_acc = self._update_metric()
-        self.log_vars['running_acc'] = self.running_acc.item()
+    def _collect_running_batch_states(self, metric, log_vars):
+        self.running_acc = self._update_metric(metric)
+        log_vars['running_acc'] = self.running_acc.item()
 
     # Collect the status of the epoch
-    def _collect_epoch_states(self):
-        scores = self.running_metric.get_scores()
+    def _collect_epoch_states(self, metric, log_vars):
+        scores = metric.get_scores()
         self.epoch_acc = scores['mf1']
-        self.log_vars['epoch_acc'] = self.epoch_acc.item()
+        log_vars['epoch_acc'] = self.epoch_acc.item()
 
         for k, v in scores.items():
-            self.log_vars[k] = v
+            log_vars[k] = v
 
     # Rest all the performance metrics
-    def _clear_cache(self):
-        self.running_metric.clear()
+    def _clear_cache(self, metric):
+        metric.clear()
 
     # Finctions related to learning rate sheduler
     def _update_lr_schedulers(self):
