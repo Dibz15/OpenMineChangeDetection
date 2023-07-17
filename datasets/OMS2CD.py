@@ -188,7 +188,10 @@ class OMS2CD(NonGeoDataset):
                     overlap=(raw_img_tensor.shape[0]-1, self.tile_overlap[0], self.tile_overlap[1]),
                     mode=self.tile_mode,
                     channel_dimension=0)
+
                 image_shapes[i] = list(raw_img_tensor.shape)
+                if not self.index_no_mask:
+                    image_shapes[i][0] -= 1 # In this case we need to remove the mask channel from the shape
                 tile_shape = tiler.get_mosaic_shape(with_channel_dim=True)
                 num_tiles = tile_shape[0] * tile_shape[1] * tile_shape[2]
 
@@ -202,8 +205,7 @@ class OMS2CD(NonGeoDataset):
                     # Skip files that don't have mask data
                     def is_in_aoi(mask_tile):
                         num_pixels_in_aoi = mask_tile.sum()
-                        total_pixels = mask_tile.numel()
-                        return num_pixels_in_aoi >= 0.0005 * total_pixels
+                        return num_pixels_in_aoi > 1 # At least 1 white GT mask pixel
                     
                     full_img_numpy = raw_img_tensor.cpu().numpy()
                     full_image_shape = image_shapes[i].copy()
@@ -211,13 +213,16 @@ class OMS2CD(NonGeoDataset):
 
                     # When index_no_mask is False, we don't want to index any tiles
                     # that don't have sufficient white mask pixels
+                    added = 0
                     for j in range(total_tiles, total_tiles + num_tiles):
                         chip_index = j - total_tiles
                         img_mask_tile = tiler.get_tile(full_img_numpy, chip_index, copy_data = False)
                         mask_tile = img_mask_tile[full_image_shape[0] - 1, :, :]
                         if is_in_aoi(mask_tile):
-                            index_map[total_tiles] = (i, chip_index)
-                            total_tiles += 1
+                            index_map[total_tiles + added] = (i, chip_index)
+                            added += 1
+                            
+                    total_tiles += added
 
         return total_tiles, index_map, image_shapes
 
