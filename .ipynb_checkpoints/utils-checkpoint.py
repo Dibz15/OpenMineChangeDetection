@@ -6,7 +6,7 @@ from torchgeo.datasets.utils import draw_semantic_segmentation_masks
 import numpy as np
 import kornia.augmentation as K
 from tqdm import tqdm
-from .TinyCD.metrics.metric_tool import ConfuseMatrixMeter
+from TinyCD.metrics.metric_tool import ConfuseMatrixMeter
 import requests
 import hashlib
 import os
