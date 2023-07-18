@@ -544,7 +544,7 @@ class OMS2CDDataModule(NonGeoDataModule):
             val_split_pct: Percentage of the dataset to use as a validation set.
             num_workers: Number of workers for parallel data loading.
             **kwargs: Additional keyword arguments passed to
-                :class:`~torchgeo.datasets.OSCD`.
+                :class:`~torchgeo.datasets.NonGeoDataModule`.
         """
         super().__init__(OMS2CD, batch_size, num_workers, **kwargs)
         self.mean, self.std = OMS2CD.GetNormalizationValues(bands)
