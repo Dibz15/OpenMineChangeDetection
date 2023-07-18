@@ -1,0 +1,1 @@
+from .lsnet_lightning import LSNetLightning as LSNetLightning
