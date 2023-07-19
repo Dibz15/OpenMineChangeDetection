@@ -172,8 +172,9 @@ class OMS2CD(NonGeoDataset):
             for i in range(len(self.file_list)):
                 files = self.file_list[i]
                 image1, _ = self._load_image(files[0])
-                if image1.shape[1] < self.tile_shape[0] or image1.shape[2] < self.tile_shape[1]:
-                    continue
+                if self.tile_mode != "constant":
+                    if image1.shape[1] < self.tile_shape[0] or image1.shape[2] < self.tile_shape[1]:
+                        continue
                 image1_tensor = torch.from_numpy(image1)
                 
                 if self.index_no_mask:
