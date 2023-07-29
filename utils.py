@@ -10,6 +10,8 @@ from .TinyCD.metrics.metric_tool import ConfuseMatrixMeter
 import requests
 import hashlib
 import os
+import torchmetrics
+from .datasets import OMS2CD
 
 def plot_prediction(
     model: torch.nn.Module,
@@ -152,3 +154,164 @@ def download_and_verify(url, save_path, good_hash):
     verified = verify_file(save_path, good_hash)
     print(f"{'Good.' if verified else 'Hashes do not match.'}")
     return verified
+
+def iou_score(output, target, threshold, apply_sigmoid=False):
+    smooth = 1e-6
+
+    if apply_sigmoid:
+        output = torch.sigmoid(output)
+    output_ = output > threshold
+    target_ = target > threshold
+    intersection = (output_ & target_).sum(dim=(2, 3))
+    union = (output_ | target_).sum(dim=(2, 3))
+    iou = (intersection + smooth) / (union + smooth)
+
+    return iou.sum(), iou.numel()
+
+def evaluate_model(model, dataloader, proc_func, device, threshold=0.3):
+    # Create a DataLoader
+    # Define metrics
+    accuracy = torchmetrics.Accuracy(task='binary', threshold=threshold).to(device)
+    f1 = torchmetrics.F1Score(task='binary', threshold=threshold).to(device)
+    recall = torchmetrics.Recall(task='binary', threshold=threshold).to(device)
+    precision = torchmetrics.Precision(task='binary', threshold=threshold).to(device)
+    average_precision = torchmetrics.AveragePrecision(task='binary').to(device)
+    pr_curve = torchmetrics.PrecisionRecallCurve(task='binary', thresholds=50).to(device)
+
+    total_iou = 0
+    total_images = 0
+    # Ensure model is in evaluation mode
+    model.eval()
+
+    with torch.no_grad():
+        for batch in tqdm(dataloader):
+            # Apply preprocessing function
+            outputs, targets = proc_func(model, batch, device)
+            if len(outputs.shape) == 3:
+                outputs = outputs.unsqueeze(1)
+            if len(targets.shape) == 3:
+                targets = targets.unsqueeze(1)
+            # make sure that outputs are [0, 1]
+            # plot_masks(outputs.squeeze(1), targets.squeeze(1), threshold)
+            # Update metrics
+            accuracy.update(outputs, targets)
+            f1.update(outputs, targets)
+            recall.update(outputs, targets)
+            precision.update(outputs, targets)
+            average_precision.update(outputs, targets)
+            pr_curve.update(outputs, targets)
+            iou_sum, num_images = iou_score(outputs, targets, threshold)
+            total_iou += iou_sum.item()
+            total_images += num_images
+
+    # Compute final metrics
+    metrics = {
+        'OA': accuracy.compute().item(),
+        'F1': f1.compute().item(),
+        'recall': recall.compute().item(),
+        'precision': precision.compute().item(),
+        'AP': average_precision.compute().item(),
+        'PRC': pr_curve.compute(),
+        'IoU': total_iou / total_images,
+    }
+
+    return metrics
+
+def get_mask_preds_tinycd(model, batch, device):
+    normalize_sample = OMS2CD.GetNormalizeTransform(bands='rgb')
+    normalize_batch = K.Normalize(mean=normalize_sample.mean, std=normalize_sample.std)
+    batch = {k: v.to(device) for k,v in batch.items() if isinstance(v, torch.Tensor)}
+    batch['image'] = normalize_batch(batch['image'])
+    mask_pred = model(batch['image']).squeeze(1)
+    mask_target = batch['mask']
+    return mask_pred, mask_target
+
+def get_mask_preds_lsnet(model, batch, device):
+    normalize_sample = OMS2CD.GetNormalizeTransform(bands='rgb')
+    normalize_batch = K.Normalize(mean=normalize_sample.mean, std=normalize_sample.std)
+    batch = {k: v.to(device) for k,v in batch.items() if isinstance(v, torch.Tensor)}
+    batch['image'] = normalize_batch(batch['image'])
+    mask_pred = model(batch)
+    mask_pred = mask_pred[-1]
+    mask_pred_prob = torch.softmax(mask_pred, dim=1)
+    # mask_pred_val, mask_pred_idx = torch.max(mask_pred, 1)
+    mask_pred_prob_class1 = mask_pred_prob[:, 1, :, :]
+    return mask_pred_prob_class1
+
+def get_mask_preds_ddpmcd(model, batch, device):
+    normalize_sample = OMS2CD.GetNormalizeTransform(bands='rgb')
+    normalize_batch = K.Normalize(mean=normalize_sample.mean, std=normalize_sample.std)
+    batch = {k: v.to(device) for k,v in batch.items() if isinstance(v, torch.Tensor)}
+    batch['image'] = normalize_batch(batch['image'])
+    mask_pred = model(batch)
+    # mask_pred = torch.argmax(mask_pred, dim=1, keepdim=False)
+    mask_pred_prob = torch.softmax(mask_pred, dim=1)
+    # mask_pred_val, mask_pred_idx = torch.max(mask_pred, 1)
+    mask_pred_prob_class1 = mask_pred_prob[:, 1, :, :]
+    return mask_pred_prob_class1
+
+def load_tinycd(weight_path, device):
+    from .TinyCD.models.cd_lightning import ChangeDetectorLightningModule
+    tinycd = ChangeDetectorLightningModule(freeze_backbone=False)
+    tinycd.load_state_dict(torch.load(weight_path, map_location=device))
+    return tinycd.to(device).eval()
+
+def load_lsnet(weight_path, device):
+    from .LSNet import LSNetLightning
+    from .LSNet.utils.parser import get_parser_with_args
+    class AttributeDict(object):
+        def __init__(self, dictionary):
+            for key, value in dictionary.items():
+                setattr(self, key, value)
+
+    state = torch.load(weight_path, map_location=device)
+    opt = get_parser_with_args(metadata_json='OpenMineChangeDetection/LSNet/metadata.json')
+    opt = AttributeDict(opt)
+    model = LSNetLightning(opt)
+    model.load_state_dict(state, strict=False)
+    return model.to(device).eval()
+
+def load_ddpmcd(weight_path, device):
+    from .ddpm_cd.core import logger as Logger
+    from .ddpm_cd.ddpm_lightning import CD
+
+    class Args:
+        def __init__(self):
+            self.config = 'OpenMineChangeDetection/ddpm_cd/config/oms2cd.json'
+            self.phase = 'train'
+            self.gpu_ids = '0'
+            self.debug = False
+            self.enable_wandb = False
+            self.log_eval = False
+
+    opt = Logger.parse(Args())
+    opt = Logger.dict_to_nonedict(opt)
+    # opt['len_train_dataloader'] = len(datamodule.train_dataloader())
+    # opt['len_val_dataloader'] = len(datamodule.val_dataloader())
+    # opt['len_test_dataloader'] = len(datamodule.test_dataloader())
+    change_detection = CD(opt)
+    if opt['path_cd']['finetune_path'] is not None:
+        change_detection.load_network()
+    change_detection.load_state_dict(torch.load(weight_path, map_location=device))
+    return change_detection.to(device).eval()
+
+def plot_pr_curve(prc):
+    precision, recall, thresholds = prc
+    # Convert tensors to numpy arrays and move to CPU
+    precision = precision.cpu().numpy()
+    recall = recall.cpu().numpy()
+    thresholds = thresholds.cpu().numpy()
+
+    # Create a new figure
+    plt.figure()
+
+    # Plot the precision-recall curve
+    plt.plot(recall, precision, marker='.')
+
+    # Add labels and title
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve')
+
+    # Display the plot
+    plt.show()
