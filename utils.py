@@ -236,7 +236,7 @@ def get_mask_preds_lsnet(model, batch, device):
     mask_pred_prob = torch.softmax(mask_pred, dim=1)
     # mask_pred_val, mask_pred_idx = torch.max(mask_pred, 1)
     mask_pred_prob_class1 = mask_pred_prob[:, 1, :, :]
-    return mask_pred_prob_class1
+    return mask_pred_prob_class1, batch['mask']
 
 def get_mask_preds_ddpmcd(model, batch, device):
     normalize_sample = OMS2CD.GetNormalizeTransform(bands='rgb')
@@ -248,7 +248,7 @@ def get_mask_preds_ddpmcd(model, batch, device):
     mask_pred_prob = torch.softmax(mask_pred, dim=1)
     # mask_pred_val, mask_pred_idx = torch.max(mask_pred, 1)
     mask_pred_prob_class1 = mask_pred_prob[:, 1, :, :]
-    return mask_pred_prob_class1
+    return mask_pred_prob_class1, batch['mask']
 
 def load_tinycd(weight_path, device):
     from .TinyCD.models.cd_lightning import ChangeDetectorLightningModule
