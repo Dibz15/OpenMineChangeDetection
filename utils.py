@@ -168,7 +168,7 @@ def iou_score(output, target, threshold, apply_sigmoid=False):
 
     return iou.sum(), iou.numel()
 
-def evaluate_model(model, dataloader, proc_func, device, threshold=0.3):
+def evaluate_model(model, dataloader, proc_func, device, threshold=0.3, pr_thresholds=50):
     # Create a DataLoader
     # Define metrics
     accuracy = torchmetrics.Accuracy(task='binary', threshold=threshold).to(device)
@@ -176,7 +176,10 @@ def evaluate_model(model, dataloader, proc_func, device, threshold=0.3):
     recall = torchmetrics.Recall(task='binary', threshold=threshold).to(device)
     precision = torchmetrics.Precision(task='binary', threshold=threshold).to(device)
     average_precision = torchmetrics.AveragePrecision(task='binary').to(device)
-    pr_curve = torchmetrics.PrecisionRecallCurve(task='binary', thresholds=50).to(device)
+    if pr_thresholds is not None:
+        pr_curve = torchmetrics.PrecisionRecallCurve(task='binary', thresholds=pr_thresholds).to(device)
+    else:
+        pr_curve = torchmetrics.PrecisionRecallCurve(task='binary').to(device)
 
     total_iou = 0
     total_images = 0
