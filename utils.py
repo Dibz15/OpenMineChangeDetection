@@ -12,6 +12,10 @@ import hashlib
 import os
 import torchmetrics
 from .datasets import OMS2CD
+import matplotlib.cm as cm
+from scipy import interpolate
+import pandas as pd
+
 
 def plot_prediction(
     model: torch.nn.Module,
@@ -305,11 +309,37 @@ def plot_pr_curve(prc):
     recall = recall.cpu().numpy()
     thresholds = thresholds.cpu().numpy()
 
+    # Append a maximum value to thresholds to make it the same length as precision and recall
+    thresholds = np.append(thresholds, np.max(thresholds))
+
+    # Create a DataFrame and remove duplicates in 'recall' by averaging 'precision' and 'thresholds'
+    df = pd.DataFrame({'recall': recall, 'precision': precision, 'thresholds': thresholds})
+    df = df.groupby('recall', as_index=False).mean()
+
+    # Interpolate the precision, recall, and thresholds
+    num_interp_points = 100  # Change this to control the number of interpolation points
+    interp_recall = np.linspace(df['recall'].min(), df['recall'].max(), num_interp_points)
+    interp_precision_func = interpolate.interp1d(df['recall'], df['precision'], kind='cubic')
+    interp_precision = interp_precision_func(interp_recall)
+    interp_thresholds_func = interpolate.interp1d(df['recall'], df['thresholds'], kind='cubic')
+    interp_thresholds = interp_thresholds_func(interp_recall)
+
     # Create a new figure
     plt.figure()
 
-    # Plot the precision-recall curve
-    plt.plot(recall, precision, marker='.')
+    # Normalize the thresholds to range between 0 and 1 for the colormap
+    norm = plt.Normalize(interp_thresholds.min(), interp_thresholds.max())
+
+    # Create a colormap
+    cmap = cm.get_cmap('viridis')
+
+    # Plot the precision-recall curve, color by threshold
+    for i in range(len(interp_precision)):
+        plt.plot(interp_recall[i], interp_precision[i], marker='.', color=cmap(norm(interp_thresholds[i])))
+
+    # Add a colorbar
+    sm = cm.ScalarMappable(norm=norm, cmap=cmap)
+    plt.colorbar(sm, label='Threshold')
 
     # Add labels and title
     plt.xlabel('Recall')
