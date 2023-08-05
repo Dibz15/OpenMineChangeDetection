@@ -293,14 +293,28 @@ def load_ddpmcd(weight_path, device):
 
     opt = Logger.parse(Args())
     opt = Logger.dict_to_nonedict(opt)
-    # opt['len_train_dataloader'] = len(datamodule.train_dataloader())
-    # opt['len_val_dataloader'] = len(datamodule.val_dataloader())
-    # opt['len_test_dataloader'] = len(datamodule.test_dataloader())
     change_detection = CD(opt)
     if opt['path_cd']['finetune_path'] is not None:
         change_detection.load_network()
     change_detection.load_state_dict(torch.load(weight_path, map_location=device))
     return change_detection.to(device).eval()
+
+def load_ddpmcd_oms2cd(device, download_cache_dir='ddpmcd_weights'):
+    good_hash = "ecf10f6ae54aa7e19814f3797de025d7fbfd3b957547666f8111094b41e71a18"
+    oms2cd_file = os.path.join(download_cache_dir, "ddpmcd_oms2cd.pt")
+    os.makedirs(download_cache_dir, exist_ok=True)
+    if not os.path.isfile(oms2cd_file):
+        assert download_and_verify("https://drive.google.com/uc?export=download&id=1CeQJQKjF8oMSUQs7P_mSVHwzthB9BSuy&confirm=t&uuid=2b47d772-4d26-4f8a-84c9-ae6f70b60ddf&at=ALt4Tm3nYgdnLO8B4zys6up4Hdh3:1691262922716", 
+                                    oms2cd_file, 
+                                    good_hash)
+    
+    return load_ddpmcd(oms2cd_file, device)
+
+def load_tinycd_oms2cd(device):
+    return load_tinycd(os.path.join('OpenMineChangeDetection', 'final_weights', 'tinycd_oms2cd.pt'), device)
+
+def load_lsnet_oms2cd(device):
+    return load_lsnet(os.path.join('OpenMineChangeDetection', 'final_weights', 'lsnet_oms2cd.pt'), device)
 
 def plot_pr_curve(prc):
     precision, recall, thresholds = prc
