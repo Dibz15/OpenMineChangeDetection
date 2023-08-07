@@ -68,7 +68,7 @@ The versions listed were fixed to ensure that the notebooks can be run in the fu
 
 ## Licences
 
-Each of the model subdirectories which were adapted for this research have their own explicit licences. They are listed here. Please note that while this repository is provided under an Apache 2.0 Licence, the individual licence of the listed subdirectories may grant different rights and have different limitations. Please consider them carefully.
+Each of the model subdirectories which were adapted for this research have their own explicit licences. They are listed here. Please note that while this repository is provided under an Open Software License 3.0, the individual licence of the listed subdirectories may grant different rights and have different limitations. Please consider them carefully.
 
 - **TinyCD**: The licence provided reads "Code is released for non-commercial and research purposes **only**. For commercial purposes, please contact the authors." 
   - Note: I have contacted the owner of the original TinyCD repository and they have given me explicit permission to use and extend the original source code for my research.
