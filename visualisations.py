@@ -1,3 +1,10 @@
+"""
+Author: Austin Dibble
+
+This file falls under the repository's OSL 3.0.
+
+"""
+
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
@@ -15,6 +22,32 @@ import seaborn as sns
 from scipy import stats
 
 def predict_file_mask(model, dataset, pred_func, device, file_index, threshold=None, plot=False, output_path=None):
+    """
+    Predict the mask for a specific file using the provided model and dataset.
+
+    Parameters:
+        model (torch.nn.Module): The PyTorch model used for prediction.
+        dataset (torch.utils.data.Dataset): The dataset containing the image tiles for prediction.
+        pred_func (function): The prediction function that takes the model, input data, and device and returns predictions.
+        device (str or torch.device): The device to use for prediction (e.g., 'cuda' or 'cpu').
+        file_index (int): The index of the file in the dataset to predict the mask for.
+        threshold (float, optional): The threshold value to apply to the predicted mask.
+                                     If provided, the mask will be binarized. Defaults to None.
+        plot (bool, optional): Whether to plot and display the predicted mask. Defaults to False.
+        output_path (str, optional): The path to save the predicted mask as a GeoTIFF file.
+                                     If not provided, the mask will not be saved. Defaults to None.
+
+    Returns:
+        tuple: A tuple containing two elements:
+            - final_mask (numpy.ndarray): The predicted mask as a 2D numpy array.
+            - image_area (int): The area of the original full image.
+
+    Example:
+        # Assuming the model, dataset, pred_func, and device are defined.
+        file_index = 0
+        threshold_value = 0.5
+        prediction, image_area = predict_file_mask(model, dataset, pred_func, 'cuda', file_index, threshold=threshold_value, plot=True, output_path='/path/to/output_mask.tif')
+    """
     batch_size = 3 # Set your batch size
     image_tile_map = dataset.get_image_tile_ranges()
     chip_idx_range = image_tile_map[file_index]
@@ -59,6 +92,28 @@ def predict_file_mask(model, dataset, pred_func, device, file_index, threshold=N
     return final_mask, (full_image_shape[1]*full_image_shape[2])
 
 def create_timeline_mask(date_list, mask_list, date_range_list, path=None):
+    """
+    Create a timeline mask visualizing multiple masks with associated dates. Saves the created plot to the given path.
+
+    Parameters:
+        date_list (list): A list of dates corresponding to each mask in mask_list.
+                          Each date should be a string in a format recognized by pandas.to_datetime.
+        mask_list (list): A list of masks, where each mask is a 2D numpy array.
+                          The masks should have the same shape and be in binary format (0 or 1).
+        date_range_list (list): A list of date ranges corresponding to each mask in mask_list.
+                                Each date range can be a string representing a period or any relevant label.
+        path (str, optional): The path to save the generated timeline mask as an image.
+                              If not provided, the plot will be displayed but not saved. Defaults to None.
+
+    Returns:
+        None
+
+    Example:
+        date_list = ['2023-01-01', '2023-02-01', '2023-03-01']
+        mask_list = [mask_1, mask_2, mask_3]
+        date_range_list = ['2023-01-01 - 2023-02-01', '2023-02-01 - 2023-03-01', 'Mar 2023']
+        create_timeline_mask(date_list, mask_list, date_range_list, path='/path/to/timeline_mask.png')
+    """
     # Normalize dates to the range [0, 1] for color mapping
     min_date, max_date = pd.to_datetime(min(date_list)), pd.to_datetime(max(date_list))
     if min_date != max_date:
@@ -87,6 +142,30 @@ def create_timeline_mask(date_list, mask_list, date_range_list, path=None):
     plt.close()
 
 def predict_masks(model, dataset, pred_func, device, threshold=None, output_dir=None, filter_area=False, facilities=None):
+    """
+    Predict masks for multiple facilities using the provided model and dataset.
+
+    Parameters:
+        model (torch.nn.Module): The PyTorch model used for prediction.
+        dataset (torch.utils.data.Dataset): The dataset containing image tiles for prediction.
+        pred_func (function): The prediction function that takes the model, input data, and device and returns predictions.
+        device (str or torch.device): The device to use for prediction (e.g., 'cuda' or 'cpu').
+        threshold (float, optional): The threshold value to apply to the predicted masks for binarization. Defaults to None.
+        output_dir (str, optional): The directory to save the predicted masks and the timeline mask images.
+                                    If not provided, the images will not be saved. Defaults to None.
+        filter_area (bool, optional): Whether to filter the predicted masks using area masks. Defaults to False.
+        facilities (list, optional): A list of facility names to process. If None, all facilities in the dataset will be used.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing information about the predicted masks and area changes for each facility.
+
+    Example:
+        # Assuming the model, dataset, and pred_func are defined.
+        facilities_to_process = ['facility_A', 'facility_B']
+        output_directory = '/path/to/output_directory'
+        predicted_changes_df = predict_masks(model, dataset, pred_func, torch.device('cuda'), threshold=0.5, output_dir=output_directory, filter_area=True, facilities=facilities_to_process)
+    """
+
     change_list = []
     if output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
@@ -149,6 +228,29 @@ def predict_masks(model, dataset, pred_func, device, threshold=None, output_dir=
     return pd.DataFrame(change_list)
 
 def predict_index(dataset, index_func, device, file_index, plot=False, output_path=None):
+    """
+    Predict an index for a specific file using the provided index function and dataset.
+
+    Parameters:
+        dataset (torch.utils.data.Dataset): The dataset containing image tiles for prediction.
+        index_func (function): The index function that takes a tile dictionary and device and returns the index values.
+        device (str or torch.device): The device to use for prediction (e.g., 'cuda' or 'cpu').
+        file_index (int): The index of the file in the dataset to predict the index for.
+        plot (bool, optional): Whether to plot and display the predicted indices for both images. Defaults to False.
+        output_path (str, optional): The path to save the predicted index as a GeoTIFF file.
+                                     If not provided, the index will not be saved. Defaults to None.
+
+    Returns:
+        tuple: A tuple containing three elements:
+            - final_index_pre (numpy.ndarray): The predicted index for the first image as a 2D numpy array.
+            - final_index_post (numpy.ndarray): The predicted index for the second image as a 2D numpy array.
+            - image_area (int): The area of the original full image.
+
+    Example:
+        # Assuming the dataset and index_func are defined.
+        file_index = 0
+        index_output, _, image_area = predict_index(dataset, index_func, 'cuda', file_index, plot=True, output_path='/path/to/index_output.tif')
+    """
     image_tile_map = dataset.get_image_tile_ranges()
     chip_idx_range = image_tile_map[file_index]
     tiler, full_image_shape = dataset._get_tiler(file_index, channels_override = 1)
@@ -186,6 +288,21 @@ def predict_index(dataset, index_func, device, file_index, plot=False, output_pa
     return final_index_pre, final_index_post, (full_image_shape[1]*full_image_shape[2])
 
 def predict_indices(dataset, pred_func, device):
+    """
+    Predict indices for all files in the dataset using the provided index prediction function.
+
+    Parameters:
+        dataset (torch.utils.data.Dataset): The dataset containing image tiles for prediction.
+        pred_func (function): The index prediction function that takes a tile dictionary and device and returns the indices.
+        device (str or torch.device): The device to use for prediction (e.g., 'cuda' or 'cpu').
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing information about the predicted indices and area changes for each file.
+
+    Example:
+        # Assuming the dataset and pred_func are defined.
+        index_predictions_df = predict_indices(dataset, pred_func, 'cuda')
+    """
     change_list = []
     for facility in sorted(dataset.get_facilities()):
         facility_file_indices = dataset.get_facility_file_indices(facility)
@@ -202,6 +319,24 @@ def predict_indices(dataset, pred_func, device):
     return pd.DataFrame(change_list)
 
 def predict_masks_validated(dataset, facilities, output_dir=None):
+    """
+    Predict validated masks for selected facilities using ground truth masks.
+
+    Parameters:
+        dataset (torch.utils.data.Dataset): The dataset containing image tiles for prediction.
+        facilities (list): A list of facility names for which to predict the masks.
+        output_dir (str, optional): The directory to save the generated timeline mask images.
+                                    If not provided, the images will not be saved. Defaults to None.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing information about the predicted masks and area changes for each facility.
+
+    Example:
+        # Assuming the dataset and facilities list are defined.
+        output_directory = '/path/to/output_directory'
+        validated_masks_df = predict_masks_validated(dataset, facilities, output_dir=output_directory)
+    """
+
     change_list = []
     if output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
@@ -256,6 +391,26 @@ def predict_masks_validated(dataset, facilities, output_dir=None):
     return df
 
 def predict_ndtci_masks(dataset, input_dir, output_dir, filter_area=False, facilities=None):
+    """
+    Predict NDTCI masks for selected facilities using the provided dataset and input directory.
+
+    Parameters:
+        dataset (torch.utils.data.Dataset): The dataset containing image tiles for prediction.
+        input_dir (str): The directory containing the predicted masks for each facility and file index.
+        output_dir (str): The directory to save the average NDTCI GeoTIFFs and masked average NDTCI GeoTIFFs.
+        filter_area (bool, optional): Whether to filter the NDTCI masks using area masks if available. Defaults to False.
+        facilities (list, optional): A list of facility names for which to predict the NDTCI masks.
+                                     If None, all facilities in the dataset will be used.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing information about the predicted NDTCI values for each file.
+
+    Example:
+        # Assuming the dataset and input_dir are defined.
+        output_directory = '/path/to/output_directory'
+        facilities_to_process = ['facility_A', 'facility_B']
+        ndtci_predictions_df = predict_ndtci_masks(dataset, input_dir, output_directory, filter_area=True, facilities=facilities_to_process)
+    """
     change_list = []
     if output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
@@ -314,6 +469,24 @@ def predict_ndtci_masks(dataset, input_dir, output_dir, filter_area=False, facil
 
 
 def predict_ndtci_masks_validated(dataset, facilities, output_dir):
+    """
+    Predict validated NDTCI masks for selected facilities using ground truth masks.
+
+    Parameters:
+        dataset (torch.utils.data.Dataset): The dataset containing image tiles for prediction.
+        facilities (list): A list of facility names for which to predict the NDTCI masks.
+        output_dir (str): The directory to save the generated mean-NDTCI GeoTIFFs.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing information about the predicted NDTCI values for each file.
+
+    Example:
+        # Assuming the dataset and facilities list are defined.
+        output_directory = '/path/to/output_directory'
+        facilities_to_process = ['facility_A', 'facility_B']
+        ndtci_validated_df = predict_ndtci_masks_validated(dataset, facilities_to_process, output_directory)
+    """
+
     change_list = []
 
     for facility in sorted(facilities):
@@ -348,6 +521,24 @@ def predict_ndtci_masks_validated(dataset, facilities, output_dir):
     return df
 
 def create_correlation_plot(df_path, var, title, output_path, gt=False):
+    """
+    Create a correlation plot based on the data from the mask change prediction dataframe.
+
+    Parameters:
+        df_path (str): The file path to the CSV file containing the DataFrame.
+        var (str): The variable/column name in the DataFrame to be used for correlation analysis.
+        title (str): The title of the correlation plot.
+        output_path (str): The file path to save the generated correlation plot.
+        gt (bool, optional): Whether to include the 'GT' (ground truth) model in the correlation analysis. Defaults to False.
+
+    Example:
+        # Assuming the DataFrame file and other parameters are defined.
+        correlation_var = 'proportion'
+        correlation_title = 'Correlation Plot for Proportion'
+        correlation_output = '/path/to/correlation_plot.png'
+        include_gt_model = True
+        create_correlation_plot(df_file, correlation_var, correlation_title, correlation_output, gt=include_gt_model)
+    """
     df = pd.read_csv(df_path)
     # Pivot the DataFrame so that each model's 'proportion' forms a column
     df_pivot = df.pivot_table(index=['facility', 'predate', 'postdate'], 
@@ -395,7 +586,6 @@ def create_correlation_plot(df_path, var, title, output_path, gt=False):
     plt.savefig(output_path)
     plt.show()
 
-
 def mape(y_true, y_pred): 
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
@@ -409,6 +599,22 @@ def rmse(y_true, y_pred):
     return np.sqrt(((y_pred - y_true) ** 2).mean())
 
 def calculate_rmse(df_path, var):
+    """
+    Calculate the root mean squared error (RMSE) for each model's predictions compared to ground truth.
+
+    Parameters:
+        df_path (str): The file path to the CSV file containing the DataFrame with prediction data.
+        var (str): The variable/column name in the DataFrame to be used for RMSE calculation.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing the RMSE values for each model.
+
+    Example:
+        # Assuming the DataFrame file and the variable name are defined.
+        rmse_var = 'proportion'
+        df_file_path = '/path/to/df_file.csv'
+        rmse_df = calculate_rmse(df_file_path, rmse_var)
+    """
     df = pd.read_csv(df_path)
     # Pivot the DataFrame so that each model's 'proportion' forms a column
     df_pivot = df.pivot_table(index=['facility', 'predate', 'postdate'], 
@@ -429,20 +635,35 @@ def calculate_rmse(df_path, var):
     return pd.DataFrame(metrics)
 
 def plot_rmse(df_path1, df_path2, var, title, output_path):
+    """
+    Plot the root mean squared error (RMSE) comparison between two sets of predictions.
+
+    Parameters:
+        df_path1 (str): The file path to the first CSV file containing the DataFrame for the first set of predictions.
+        df_path2 (str): The file path to the second CSV file containing the DataFrame for the second set of predictions.
+        var (str): The variable/column name in the DataFrame to be used for RMSE calculation.
+        title (str): The title of the RMSE comparison plot.
+        output_path (str): The file path to save the generated RMSE comparison plot.
+        
+    Example:
+        # Assuming the DataFrame files and other parameters are defined.
+        rmse_var = 'proportion'
+        df_file_path1 = '/path/to/df_file1.csv'
+        df_file_path2 = '/path/to/df_file2.csv'
+        rmse_plot_title = 'RMSE Comparison between Two Sets of Predictions'
+        rmse_output_path = '/path/to/rmse_comparison_plot.png'
+        plot_rmse(df_file_path1, df_file_path2, rmse_var, rmse_plot_title, rmse_output_path)
+    """
     df_metrics1 = calculate_rmse(df_path1, var)
     df_metrics2 = calculate_rmse(df_path2, var)
 
     models = ['DDPMCD', 'TinyCD', 'LSNet', 'Median']
-
-    # Setting the positions and width for the bars
     pos = list(range(len(df_metrics1['RMSE'])))
     width = 0.2
     print(df_metrics1)
     print(df_metrics2)
-    # Plotting the bars
     fig, ax = plt.subplots(figsize=(7,5))
 
-    # Create a bar with RMSE data from the first DataFrame
     plt.bar(pos,
             df_metrics1['RMSE'],
             width,
@@ -450,32 +671,16 @@ def plot_rmse(df_path1, df_path2, var, title, output_path):
             # color='#EE3224',
             label='with mask')
 
-    # Create a bar with RMSE data from the second DataFrame,
-    # in position pos + some width buffer
     plt.bar([p + width for p in pos],
             df_metrics2['RMSE'],
             width,
-            # alpha=0.5,
-            # color='#F78F1E',
             label='no mask')
 
-    # Set the y axis label
     ax.set_ylabel('RMSE')
-
-    # Set the chart's title
     ax.set_title(title)
-
-    # Set the position of the x ticks
     ax.set_xticks([p + 0.5 * width for p in pos])
-
-    # Set the labels for the x ticks
     ax.set_xticklabels(models)
-
-    # Adding the legend and showing the plot
     plt.legend(loc='upper right')
     plt.grid()
     plt.savefig(output_path)
     plt.show()
-
-# Use the function as:
-# plot_rmse(df_path1, df_path2, var, title)
