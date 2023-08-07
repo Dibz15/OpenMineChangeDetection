@@ -39,6 +39,30 @@ The `site_data` subdirectory (first level) contains the GeoJSON data described i
 
 The subdirectories within `site_data` contain a myriad of experimental results and visualisations which were used in comparing models and verifying the inference of the models on different locations.
 
+## Notes on Code Written By Me:
+
+
+
+## Library Dependencies
+
+The library imports seen in the code and notebooks assumes execution from a Google Colab environment, which includes all required dependencies besides those explicitly installed in the notebooks. If running the code outside of Google Colab, you may need to install the following: 
+- PyTorch
+- torchvision
+- tqdm
+- pandas
+- NumPy
+- matplotlib
+
+The libraries used explicitly, which must be installed within Colab: 
+- rasterio==1.3.8
+- torchgeo==0.4.1
+- tiler==0.5.7
+- kornia==0.6.12
+- lightning==1.9.5
+- torchmetrics==0.11.4
+
+The versions listed were fixed to ensure that the notebooks can be run in the future, without breaking API changes that can occur with newer versions. 
+
 ## Licenses
 
 Each of the model subdirectories which were adapted for this research have their own explicit licenses. They are listed here. Please note that while this repository is provided under an Apache 2.0 License, the individual license of the listed subdirectories may grant different rights and have different limitations. Please consider them carefully.
