@@ -27,6 +27,11 @@ SOFTWARE
 
 """
 
+"""
+The majority of the code in this file is not derived from torchgeo, and is licensed
+under OSL 3.0, as described in the README.
+"""
+
 
 from IPython.core.interactiveshell import import_item
 # Copyright (c) Microsoft Corporation. All rights reserved.

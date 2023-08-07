@@ -1,4 +1,6 @@
 """
+Author: Austin Dibble
+
 This file includes code derived from the torchgeo project,
 which is licensed under the MIT License. The original license notice
 is included below:
@@ -27,6 +29,12 @@ SOFTWARE
 
 """
 
+"""
+The majority of the code in this file is not derived from torchgeo, and is licensed
+under OSL 3.0, as described in the README.
+"""
+
+
 from . import OMS2CD
 import csv
 import os, re
@@ -49,6 +57,26 @@ class CaseStudyDataset(OMS2CD):
         )
 
     def _create_mapping(self):
+        """
+            Creates a mapping file for Sentinel-2 image pairs in the dataset.
+
+            The mapping file contains the following columns:
+            - id: Unique identifier for each pair of images.
+            - imageA: Filename of the first image (pre-change).
+            - imageB: Filename of the second image (post-change).
+            - facility: Name of the facility corresponding to the image pair.
+            - predate: Date of the first image (pre-change).
+            - postdate: Date of the second image (post-change).
+
+            This function scans the root directory of the dataset and identifies pairs of Sentinel-2 images 
+            that belong to the same facility. It then writes the corresponding file names and facility 
+            information into the mapping file as bi-temporal pairs for training/inference.
+
+            Note: If the mapping file exists, this function doesn't do anything.
+
+            Returns:
+            None
+        """
         source_dir = self.root_dir
         mapping_file_path = os.path.join(source_dir, 'mapping.csv')
         if os.path.isfile(mapping_file_path):
@@ -96,6 +124,23 @@ class CaseStudyDataset(OMS2CD):
                 prev_date = postdate
 
     def _build_index(self):
+        """
+            Builds an index list of image pairs and corresponding facility information.
+
+            The index list contains tuples for each image pair, with the following elements:
+            - imageA_path: File path of the first image (pre-change).
+            - imageB_path: File path of the second image (post-change).
+            - facility: Name of the facility corresponding to the image pair.
+            - predate: Date of the first image (pre-change).
+            - postdate: Date of the second image (post-change).
+            - id: Unique identifier for each pair of images.
+
+            This function relies on the existence of the mapping file (mapping.csv) in the dataset's root directory,
+            so it first runs _create_mapping()
+
+            Returns:
+            index_list (list): A list of tuples containing image pair information and facility names.
+        """
         self._create_mapping()
         index_list = []
         facilities = set()
@@ -166,6 +211,9 @@ class CaseStudyDataset(OMS2CD):
         return sample
 
     def get_facility_tile_indices(self, facility):
+        """
+        For the given facillity name, get all the dataset tile indices for that facility.
+        """
         indices = []
         for chip_idx in range(len(self)):
             file_info = self.get_tile_file(chip_idx)
@@ -175,6 +223,9 @@ class CaseStudyDataset(OMS2CD):
         return indices
 
     def get_facility_file_indices(self, facility):
+        """
+        For the given facility name, get all the dataset file indices for that facility.
+        """
         indices = []
         valid_indices = set(self.chip_index_map.keys())
         for file_index in range(len(self.file_list)):
@@ -183,6 +234,9 @@ class CaseStudyDataset(OMS2CD):
         return indices
 
     def get_facilities(self):
+        """
+        Get a full list of facilities in the dataset.
+        """
         return list(self.facilities_list)
 
     @classmethod

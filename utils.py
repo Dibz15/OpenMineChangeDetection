@@ -1,3 +1,10 @@
+"""
+Author: Austin Dibble
+
+This file falls under the repository's OSL 3.0.
+
+"""
+
 import torch
 import matplotlib.pyplot as plt
 from typing import Dict, Optional
@@ -16,7 +23,6 @@ import matplotlib.cm as cm
 from scipy import interpolate
 import pandas as pd
 
-
 def plot_prediction(
     model: torch.nn.Module,
     sample,
@@ -27,6 +33,27 @@ def plot_prediction(
     show_titles: bool = True,
     suptitle: Optional[str] = None,
 ) -> None:
+    """
+    Plot the prediction results for a given model on a sample image.
+
+    Parameters:
+        model (torch.nn.Module): The pre-trained or trained PyTorch model for prediction.
+        sample (Dict[str, torch.Tensor]): The sample data containing 'image' and 'mask' tensors.
+        bands (str): Specify which bands to use for visualization. Options: "all" or "rgb".
+        colormap (str, optional): The colormap to use for the predicted mask visualization. Default is "blue".
+        threshold (float, optional): The threshold value for binarizing the predicted mask. Default is 0.5.
+        alpha (float, optional): The alpha value for mask overlay on the image. Default is 0.4.
+        show_titles (bool, optional): Whether to show titles for each subplot. Default is True.
+        suptitle (str, optional): The title for the entire plot. Default is None.
+
+    Returns:
+        None: The function plots the prediction results but does not return anything.
+
+    Example:
+        # Assuming the model, sample data, and other parameters are defined.
+        plot_prediction(model, sample_data, bands="rgb", colormap="blue", threshold=0.5,
+                        alpha=0.4, show_titles=True, suptitle="Prediction Results")
+    """
     model = model.eval()
     with torch.no_grad():
         img = sample['image']
@@ -91,6 +118,25 @@ def plot_prediction(
     plt.show()
 
 def test_TinyCD(model, device, datamodule, threshold=0.4):
+    """
+    Evaluate the TinyCD model on the test dataset and compute evaluation metrics.
+
+    Parameters:
+        model (torch.nn.Module): The pre-trained or trained TinyCD model.
+        device (torch.device): The device (CPU or GPU) to run the evaluation on.
+        datamodule: The datamodule containing the test dataloader.
+        threshold (float, optional): The threshold value for binarizing the generated mask. Default is 0.4.
+
+    Returns:
+        dict: A dictionary containing evaluation metrics such as accuracy, precision, recall, F1-score, etc.
+
+    Example:
+        # Assuming the TinyCD model, device, and datamodule are defined.
+        scores_dict = test_TinyCD(model, device, datamodule, threshold=0.5)
+        print(scores_dict)
+
+    License:  Some of this function's code was copied from TinyCD/training.py and TinyCD/test_ondata.py
+    """
     bce_loss = 0.0
     criterion = torch.nn.BCELoss()
 
@@ -102,20 +148,13 @@ def test_TinyCD(model, device, datamodule, threshold=0.4):
     with torch.no_grad():
         for img_dict in tqdm(test_loader):
             img_dict = datamodule.aug(img_dict)
-            # print(img_dict['image'].shape)
-            # pass refence and test in the model
+            # test in the model
             generated_mask = model(img_dict['image'].to(device)).squeeze(1)
-            # compute the loss for the batch and backpropagate
-
             bce_loss += criterion(generated_mask, img_dict['mask'].to(device).float())
-
-            ### Update the metric tool
             bin_genmask = (generated_mask > threshold)
-            # print(bin_genmask)
             bin_genmask = bin_genmask.cpu().numpy().astype(int)
             mask = img_dict['mask'].cpu().numpy().astype(int)
             tool_metric.update_cm(pr=bin_genmask, gt=mask)
-            # break
 
         bce_loss /= len(test_loader)
         
@@ -123,7 +162,22 @@ def test_TinyCD(model, device, datamodule, threshold=0.4):
         scores_dictionary['loss'] = bce_loss
         return scores_dictionary
 
+
 def download_file(url, save_path):
+    """
+    Download a file from a given URL and save it to the specified path.
+
+    Parameters:
+        url (str): The URL of the file to download.
+        save_path (str): The path where the downloaded file will be saved.
+
+    Returns:
+        None
+
+    Example:
+        # Assuming the URL and save_path are defined.
+        download_file(url, save_path)
+    """
     response = requests.get(url, stream=True)
     file_size = int(response.headers.get("Content-Length", 0))
     progress = tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024, desc=f'Downloading file to {save_path}')
@@ -131,7 +185,6 @@ def download_file(url, save_path):
     with open(save_path, 'wb') as file:
         for data in response.iter_content(chunk_size=1024):
             if data:
-                # Write data read to the file
                 file.write(data)
                 # Update the progress bar manually
                 progress.update(len(data))
@@ -139,6 +192,19 @@ def download_file(url, save_path):
     progress.close()
 
 def compute_sha256(file_path):
+    """
+    Compute the SHA-256 hash of a file.
+
+    Parameters:
+        file_path (str): The path to the file for which the SHA-256 hash will be computed.
+
+    Returns:
+        str: The computed SHA-256 hash of the file in hexadecimal format.
+
+    Example:
+        # Assuming the file_path is defined.
+        hash_value = compute_sha256(file_path)
+    """
     sha256_hash = hashlib.sha256()
     with open(file_path,"rb") as f:
         # Read and update hash in chunks of 4K
@@ -147,6 +213,16 @@ def compute_sha256(file_path):
     return sha256_hash.hexdigest()
 
 def verify_file(save_path, good_hash):
+    """
+    Verify file's SHA-256 hash with the given good_hash.
+
+    Parameters:
+        save_path (str): The path to the file to be verified.
+        good_hash (str): The expected SHA-256 hash string.
+
+    Returns:
+        bool: True if the computed SHA-256 hash matches the good_hash, False otherwise.
+    """
     if os.path.isfile(save_path) and compute_sha256(save_path) == good_hash:
         return True
     else:
@@ -161,7 +237,6 @@ def download_and_verify(url, save_path, good_hash):
 
 def iou_score(output, target, threshold, apply_sigmoid=False):
     smooth = 1e-6
-
     if apply_sigmoid:
         output = torch.sigmoid(output)
     output_ = output > threshold
@@ -174,7 +249,6 @@ def iou_score(output, target, threshold, apply_sigmoid=False):
 
 def evaluate_model(model, dataloader, proc_func, device, threshold=0.3, pr_thresholds=50):
     # Create a DataLoader
-    # Define metrics
     accuracy = torchmetrics.Accuracy(task='binary', threshold=threshold).to(device)
     f1 = torchmetrics.F1Score(task='binary', threshold=threshold).to(device)
     recall = torchmetrics.Recall(task='binary', threshold=threshold).to(device)
@@ -198,9 +272,6 @@ def evaluate_model(model, dataloader, proc_func, device, threshold=0.3, pr_thres
                 outputs = outputs.unsqueeze(1)
             if len(targets.shape) == 3:
                 targets = targets.unsqueeze(1)
-            # make sure that outputs are [0, 1]
-            # plot_masks(outputs.squeeze(1), targets.squeeze(1), threshold)
-            # Update metrics
             accuracy.update(outputs, targets)
             f1.update(outputs, targets)
             recall.update(outputs, targets)
@@ -300,6 +371,9 @@ def load_ddpmcd(weight_path, device):
     return change_detection.to(device).eval()
 
 def load_ddpmcd_oms2cd(device, download_cache_dir='ddpmcd_weights'):
+    """
+    Load DDPM-CD trained on OMS2CD. Note that this will download the trained weights from GDrive.
+    """
     good_hash = "ecf10f6ae54aa7e19814f3797de025d7fbfd3b957547666f8111094b41e71a18"
     oms2cd_file = os.path.join(download_cache_dir, "ddpmcd_oms2cd.pt")
     os.makedirs(download_cache_dir, exist_ok=True)
@@ -311,22 +385,29 @@ def load_ddpmcd_oms2cd(device, download_cache_dir='ddpmcd_weights'):
     return load_ddpmcd(oms2cd_file, device)
 
 def load_tinycd_oms2cd(device):
+    """
+    Load TinyCD trained on OMS2CD. Note that this will only work properly when running in Colab since it expects the path to the weights to include OpenMineChangeDetection. 
+    If needed, uses load_tinycd instead to specify your own path.
+    The trained weights are in OpenMineChangeDetection/final_weights/tinycd_oms2cd.pt
+    """
     return load_tinycd(os.path.join('OpenMineChangeDetection', 'final_weights', 'tinycd_oms2cd.pt'), device)
 
 def load_lsnet_oms2cd(device):
+    """
+    Load LSNet trained on OMS2CD. Note that this will only work properly when running in Colab since it expects the path to the weights to include OpenMineChangeDetection. 
+    If needed, uses load_tinycd instead to specify your own path.
+    The trained weights are in OpenMineChangeDetection/final_weights/lsnet_oms2cd.pt
+    """
     return load_lsnet(os.path.join('OpenMineChangeDetection', 'final_weights', 'lsnet_oms2cd.pt'), device)
 
 def plot_pr_curve(prc):
     precision, recall, thresholds = prc
-    # Convert tensors to numpy arrays and move to CPU
     precision = precision.cpu().numpy()
     recall = recall.cpu().numpy()
     thresholds = thresholds.cpu().numpy()
 
     # Append a maximum value to thresholds to make it the same length as precision and recall
     thresholds = np.append(thresholds, np.max(thresholds))
-
-    # Create a DataFrame and remove duplicates in 'recall' by averaging 'precision' and 'thresholds'
     df = pd.DataFrame({'recall': recall, 'precision': precision, 'thresholds': thresholds})
     df = df.groupby('recall', as_index=False).mean()
 
@@ -337,28 +418,18 @@ def plot_pr_curve(prc):
     interp_precision = interp_precision_func(interp_recall)
     interp_thresholds_func = interpolate.interp1d(df['recall'], df['thresholds'], kind='cubic')
     interp_thresholds = interp_thresholds_func(interp_recall)
-
-    # Create a new figure
     plt.figure()
 
-    # Normalize the thresholds to range between 0 and 1 for the colormap
     norm = plt.Normalize(interp_thresholds.min(), interp_thresholds.max())
-
-    # Create a colormap
     cmap = cm.get_cmap('viridis')
 
     # Plot the precision-recall curve, color by threshold
     for i in range(len(interp_precision)):
         plt.plot(interp_recall[i], interp_precision[i], marker='.', color=cmap(norm(interp_thresholds[i])))
 
-    # Add a colorbar
     sm = cm.ScalarMappable(norm=norm, cmap=cmap)
     plt.colorbar(sm, label='Threshold')
-
-    # Add labels and title
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
-
-    # Display the plot
     plt.show()

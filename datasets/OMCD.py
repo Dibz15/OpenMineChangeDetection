@@ -39,6 +39,15 @@ from torch.utils.data import DataLoader
 from .transforms import NormalizeScale, NormalizeImageDict, TransformedSubset
 from typing import Any, Tuple, Union
 
+import kornia.augmentation as K
+from einops import repeat
+
+from torchgeo.samplers.utils import _to_tuple
+from torchgeo.transforms import AugmentationSequential
+from torchgeo.transforms.transforms import _RandomNCrop
+from torchgeo.datamodules.geo import NonGeoDataModule
+from torchgeo.datamodules.utils import dataset_split
+
 class OMCD(NonGeoDataset):
     """OMCD Dataset
     As described in:
@@ -172,6 +181,10 @@ class OMCD(NonGeoDataset):
 
     @staticmethod
     def CalcMeanVar(root, split="train"):
+        """
+        Given the root directory of the dataset, calculates the mean and variance of the
+        dataset's train split for the purposes of standardisation.
+        """
         def t(img_dict):
             return {'image': img_dict['image'].to(torch.float), 'mask': img_dict['mask']}
 
@@ -217,20 +230,6 @@ class OMCD(NonGeoDataset):
         mean, std = OMCD.mean, OMCD.std
         mean, std = torch.cat((mean, mean), dim=0), torch.cat((std, std), dim=0)
         return NormalizeImageDict(mean=mean, std=std)
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
-
-from typing import Any, Union
-
-import kornia.augmentation as K
-import torch
-from einops import repeat
-
-from torchgeo.samplers.utils import _to_tuple
-from torchgeo.transforms import AugmentationSequential
-from torchgeo.transforms.transforms import _RandomNCrop
-from torchgeo.datamodules.geo import NonGeoDataModule
-from torchgeo.datamodules.utils import dataset_split
 
 class OMCDDataModule(NonGeoDataModule):
     """LightningDataModule implementation for the OMCD dataset.

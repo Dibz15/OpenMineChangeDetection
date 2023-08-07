@@ -24,7 +24,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
+"""
 
+"""
+The majority of the code in this file is not derived from torchgeo, and is licensed
+under OSL 3.0, as described in the README.
 """
 
 import csv
@@ -79,6 +83,29 @@ class OMS2CD(NonGeoDataset):
         load_area_mask: bool = False,
         index_no_mask: bool = True
     ) -> None:
+        """
+        OMS2CD Dataset loader. Extends torchgeo's NonGeoDataset. Dataset is indexed by the tile number. len(dataset) will give the number of tiles in the chosen split, 
+        calculated from the given tile_size, tile_mode, and stride.
+
+        Args:
+            - root (str): The root directory where the dataset is stored.
+            - split (str, optional): The split of the dataset. Should be one of 'train', 'val', 'test', or 'all'.
+                                Default is 'train'.
+            - bands (str, optional): The bands to use. Should be one of 'rgb' or 'all'. Default is 'rgb'.
+            - transforms (Optional[Callable[[dict[str, Tensor]], dict[str, Tensor]]], optional): Transformations to be applied
+                                                                                                to the image pairs. Default is None.
+            - stride (Union[int, Tuple[int, int], List[int]], optional): The stride used for creating tiles from images.
+                                                                        Default is 128.
+            - tile_size (Union[int, Tuple[int, int], List[int]], optional): The size of the tiles. Default is 256.
+            - tile_mode (str, optional): The tile mode to use. Should be one of 'drop', or 'constant'. Default is 'drop'. Using 'constant' increases
+                                        the effective dataset size but allows incomplete tiles padded by 0.
+            - load_area_mask (bool, optional): Whether to load the area mask. Default is False.
+            - index_no_mask (bool, optional): Whether to include image pairs with no area mask in the dataset index. Default is True.
+
+        Example:
+            dataset = OMS2CD(root='OMS2CD', split='train', bands='rgb')
+            sample = dataset[0]
+        """
         assert bands in ['rgb', 'all']
         assert split in ['train', 'val', 'test', 'all']
         
@@ -550,7 +577,7 @@ class OMS2CD(NonGeoDataset):
 
 
 class OMS2CDDataModule(NonGeoDataModule):
-    """LightningDataModule implementation for the OMCD dataset.
+    """LightningDataModule implementation for the OMS2CD dataset.
 
     Uses the train/test splits from the dataset and further splits
     the train split into train/val splits.
@@ -565,7 +592,7 @@ class OMS2CDDataModule(NonGeoDataModule):
         num_workers: int = 0,
         **kwargs: Any,
     ) -> None:
-        """Initialize a new OSCDDataModule instance.
+        """Initialize a new OSCDDataModule instance. 
 
         Args:
             batch_size: Size of each mini-batch.
@@ -575,6 +602,10 @@ class OMS2CDDataModule(NonGeoDataModule):
             num_workers: Number of workers for parallel data loading.
             **kwargs: Additional keyword arguments passed to
                 :class:`~torchgeo.datasets.NonGeoDataModule`.
+
+            Example:
+                datamodule = OMS2CDDataModule(root='OMS2CD', bands='rgb', load_area_mask=False,
+                              batch_size=16, tile_mode="constant", index_no_mask=True, stride=100)
         """
         super().__init__(OMS2CD, batch_size, num_workers, **kwargs)
         self.mean, self.std = OMS2CD.GetNormalizationValues(bands)
@@ -585,7 +616,6 @@ class OMS2CDDataModule(NonGeoDataModule):
 
         self.aug = AugmentationSequential(
             K.Normalize(mean=self.mean, std=self.std),
-            # _RandomNCrop(self.patch_size, batch_size),
             data_keys=["image", "mask"],
         )
         self.transforms = {stage: None for stage in ['fit', 'validate', 'test', 'predict']}
