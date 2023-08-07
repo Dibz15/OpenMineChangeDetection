@@ -41,7 +41,10 @@ The subdirectories within `site_data` contain a myriad of experimental results a
 
 ## Notes on Code Written By Me:
 
-
+- In `datasets`: `OMS2CD`, `OMCD`, `OSCD_Chipped` were written by me, with a few small portions copied from the `torchgeo` source repository (see the licences section below). Such copying was performed in good faith and follows the terms of the licence available under the source repository. In each file is given the appropriate licence notice. See Licences section below.
+- Lightning class wrappers around the original models listed in the `Key Classes` section above. They are a mixture of my own modifications and the original training code given in the source repositories. Code reuse was performed in good faith following the terms of the licences in the original repositories. Each Lightning module file includes the appropriate licence notices. See the Licences section below.
+- `ndtci.py`:
+- `visualisations.py`:
 
 ## Library Dependencies
 
@@ -63,12 +66,14 @@ The libraries used explicitly, which must be installed within Colab:
 
 The versions listed were fixed to ensure that the notebooks can be run in the future, without breaking API changes that can occur with newer versions. 
 
-## Licenses
+## Licences
 
-Each of the model subdirectories which were adapted for this research have their own explicit licenses. They are listed here. Please note that while this repository is provided under an Apache 2.0 License, the individual license of the listed subdirectories may grant different rights and have different limitations. Please consider them carefully.
+Each of the model subdirectories which were adapted for this research have their own explicit licences. They are listed here. Please note that while this repository is provided under an Apache 2.0 Licence, the individual licence of the listed subdirectories may grant different rights and have different limitations. Please consider them carefully.
 
-- **TinyCD**: The license provided reads "Code is released for non-commercial and research purposes **only**. For commercial purposes, please contact the authors." 
+- **TinyCD**: The licence provided reads "Code is released for non-commercial and research purposes **only**. For commercial purposes, please contact the authors." 
   - Note: I have contacted the owner of the original TinyCD repository and they have given me explicit permission to use and extend the original source code for my research.
 - **LSNet**: Licensed under Apache 2.0. 
   - Stated changes: Any changes made to the original LSNet repository are visible in the commit history of this history. In general, the changes made were as minimal as possible. Some modifications were intended to improve module importing when using the code in a Jupyter Notebook. Other changes include adding a PyTorch Lightning wrapper class of the original LSNet training code, and making configuration file changes.
 - **DDPM-CD**: Licensed under an MIT License.
+
+Additionally, under `datasets` I have adapted some code from the [torchgeo](https://github.com/microsoft/torchgeo) and [tiler](https://github.com/the-lay/tiler) libraries for loading the OMS2CD, OMCD, and OSCD datasets. Both libraries are available under an MIT Licence.

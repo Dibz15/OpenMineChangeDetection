@@ -78,22 +78,6 @@ def load_and_prepare_omcd(local_path="/content/datasets", drive_path="/content/d
     move_folder(os.path.join(local_path, "open-pit mine change detection dataset"), os.path.join(local_path, "OMCD"))
     print("Main folder renamed successfully.")
 
-    # # Define the folder mappings
-    # folder_mappings = {
-    #     "images": "Onera Satellite Change Detection dataset - Images",
-    #     "train_labels": "Onera Satellite Change Detection dataset - Train Labels",
-    #     "test_labels": "Onera Satellite Change Detection dataset - Test Labels"
-    # }
-
-    # # Move and rename the extracted folders
-    # oscd_path = os.path.join(local_path, "OSCD")
-    # for source_folder, destination_folder in folder_mappings.items():
-    #     source_path = os.path.join(oscd_path, source_folder)
-    #     destination_path = os.path.join(oscd_path, destination_folder)
-    #     print(f"Renaming folder '{source_folder}' to '{destination_folder}'...")
-    #     move_folder(source_path, destination_path)
-    #     print(f"Folder '{source_folder}' renamed successfully to '{destination_folder}'.")
-
     print("Dataset loading and preparation complete.")
 
 def crop_sample(dataset, index: int, size: int = 256):
