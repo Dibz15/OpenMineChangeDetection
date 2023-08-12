@@ -400,6 +400,33 @@ def load_lsnet_oms2cd(device):
     """
     return load_lsnet(os.path.join('OpenMineChangeDetection', 'final_weights', 'lsnet_oms2cd.pt'), device)
 
+def download_prep_oms2cd(output_dir):
+    import zipfile
+    import os
+    good_hash = "c0170a57f4510f00338ee6a1484019c88c66ed3cbaa2840e17ff554f18b0b185"
+    oms2cd_file = os.path.join(output_dir, 'OMS2CD.zip')
+
+    if os.path.isdir(output_dir):
+        print(f'Output directory {output_dir} already exists. Skipping dataset prep.')
+        return
+
+    os.makedirs(output_dir)
+    if not os.path.isfile(oms2cd_file):
+        assert download_and_verify("https://drive.google.com/uc?export=download&id=1Kyle3U-lHQsj_zo7xO-GQJk_ZX9SmiKG&confirm=t&uuid=1756e9bd-f27e-46a7-a69d-99808107f180&at=AB6BwCAIA-RdbjvQOtJyPzNBDD9S:1691856890025", 
+                                    oms2cd_file, 
+                                    good_hash)
+    else:
+        print(f'Archive {oms2cd_file} already downloaded. Skipping.')
+
+    print(f'Extracting archive into {output_dir}.')
+    with zipfile.ZipFile(oms2cd_file, 'r') as zip_ref:
+        zip_ref.extractall(output_dir)
+
+    print(f'Removing .zip file.')
+    os.remove(oms2cd_file, missing_ok=True)
+
+    print(f'Done.')
+
 def plot_pr_curve(prc):
     precision, recall, thresholds = prc
     precision = precision.cpu().numpy()
