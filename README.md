@@ -88,3 +88,8 @@ Each of the model subdirectories which were adapted for this research have their
 - **DDPM-CD**: Licensed under an MIT License.
 
 Additionally, under `datasets` I have adapted some code from the [torchgeo](https://github.com/microsoft/torchgeo) and [tiler](https://github.com/the-lay/tiler) libraries for loading the OMS2CD, OMCD, and OSCD datasets. Both libraries are available under an MIT License.
+
+Copyrights:
+- Sentinel Images:
+  - Data provided by the European Space Agency.
+  - This OMS2CD dataset contains modified Copernicus data from 2018-2020. Original Copernicus Sentinel Data available from the European Space Agency (https://sentinel.esa.int).
