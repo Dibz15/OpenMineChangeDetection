@@ -1,5 +1,10 @@
 # Open Mine Change Detection
 
+<p align="center">
+  <img src="media/Iluka%20Western%20Australia_average_NDTCI.png" alt="Description of Image 1" width="48%" />
+  <img src="media/Iluka%20Western%20Australia_hybrid_mask.png" alt="Description of Image 2" width="48%" />
+</p>
+
 ## Overview
 
 This repository is all the code that I have used in the experimentation and writing of my MSc dissertation titled "Characterising Open Cast Mining
