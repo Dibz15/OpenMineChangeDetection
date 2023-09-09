@@ -1,3 +1,7 @@
+"""
+Author: Austin Dibble
+"""
+
 import os
 import shutil
 import zipfile

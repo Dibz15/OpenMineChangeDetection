@@ -1,3 +1,7 @@
+"""
+Author: Austin Dibble
+"""
+
 from torchvision.transforms import Normalize
 from torch.utils.data import Dataset
 import torch

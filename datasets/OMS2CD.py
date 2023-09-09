@@ -1,4 +1,6 @@
 """
+Author: Austin Dibble
+
 This file includes code derived from the torchgeo project,
 which is licensed under the MIT License. The original license notice
 is included below:

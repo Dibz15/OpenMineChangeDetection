@@ -7,6 +7,8 @@
 
 ## Overview
 
+**Created by Austin Dibble as part of his MSc thesis research at University of Strathclyde.**
+
 This repository is all the code that I have used in the experimentation and writing of my MSc dissertation titled "Characterising Open Cast Mining
 from Satellite Data". 
 

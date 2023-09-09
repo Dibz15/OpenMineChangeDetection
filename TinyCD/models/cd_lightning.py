@@ -1,3 +1,7 @@
+"""
+Author: Austin Dibble
+"""
+
 import lightning as pl
 import torch
 from .change_classifier import ChangeClassifier

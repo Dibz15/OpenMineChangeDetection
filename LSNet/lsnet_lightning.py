@@ -1,5 +1,7 @@
 
 """
+Author: Austin Dibble
+
 This file includes code derived from the LSNet project,
 which is licensed under the Apache License, Version 2.0 (the "License").
 You may obtain a copy of the License at
