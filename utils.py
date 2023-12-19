@@ -423,7 +423,10 @@ def download_prep_oms2cd(output_dir):
         zip_ref.extractall(output_dir)
 
     print(f'Removing .zip file.')
-    os.remove(oms2cd_file, missing_ok=True)
+    try:
+        os.remove(oms2cd_file)
+    except:
+        pass
 
     print(f'Done.')
 
