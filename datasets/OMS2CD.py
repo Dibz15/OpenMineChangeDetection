@@ -118,6 +118,9 @@ class OMS2CD(NonGeoDataset):
 
         self.mean = self.normalisation_map[bands][0]
         self.std = self.normalisation_map[bands][1]
+        self.load_area_mask = load_area_mask
+        self.tile_mode = tile_mode
+
         self.file_list = self._build_index()  # using build_index method to build the file list
         self.transforms = transforms
 
@@ -139,8 +142,6 @@ class OMS2CD(NonGeoDataset):
             self.tile_overlap = tuple(max(tile_size_dim - stride_dim, 0) for tile_size_dim, stride_dim in zip(self.tile_shape, stride_shape))
             self.no_tile = False
 
-        self.load_area_mask = load_area_mask
-        self.tile_mode = tile_mode
         self.total_dataset_length, self.chip_index_map, self.image_shapes_map = self._calculate_dataset_len()
 
     def _get_date_str(self, s2_file):
