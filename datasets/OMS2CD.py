@@ -143,6 +143,11 @@ class OMS2CD(NonGeoDataset):
         self.tile_mode = tile_mode
         self.total_dataset_length, self.chip_index_map, self.image_shapes_map = self._calculate_dataset_len()
 
+    def _get_date_str(self, s2_file):
+        s2_file_without_ext = s2_file.replace('.tif', '')
+        _, date_str = s2_file_without_ext.rsplit('_', 1)
+        return date_str
+
     def _build_index(self):
         valid_facilities = set()
         if self.split != 'all':
@@ -152,6 +157,7 @@ class OMS2CD(NonGeoDataset):
                 next(reader)
                 valid_facilities = set([str(row[0]) for row in reader])
         index_list = []
+        facilities_list = set()
         with open(os.path.join(self.root_dir, 'mapping.csv'), 'r', newline='') as mapping_file:
             reader = csv.DictReader(mapping_file)
             for row in reader:
@@ -159,15 +165,24 @@ class OMS2CD(NonGeoDataset):
                 facility = row['mask'].replace('.tif', '')
                 if len(valid_facilities) and facility not in valid_facilities:
                     continue
+                facilities_list.add(facility)
                 imageA_path = os.path.join(self.root_dir, row['imageA'])
                 imageB_path = os.path.join(self.root_dir, row['imageB'])
                 mask_path = os.path.join(self.root_dir, 'mask', f'{facility}_{id}.tif')
                 area_mask_path = os.path.join(self.root_dir, 'area_mask', row['mask'])
 
-                if os.path.isfile(imageA_path) and os.path.isfile(imageB_path) \
-                        and os.path.isfile(mask_path) and os.path.isfile(area_mask_path):
-                    index_list.append((imageA_path, imageB_path, mask_path, area_mask_path))
+                predate, postdate = self._get_date_str(row['imageA']), self._get_date_str(row['imageB'])
 
+                if self.load_area_mask:
+                    if os.path.isfile(imageA_path) and os.path.isfile(imageB_path) \
+                            and os.path.isfile(mask_path) and os.path.isfile(area_mask_path):
+                        index_list.append((imageA_path, imageB_path, mask_path, area_mask_path, facility, predate, postdate, id))
+                else:
+                    if os.path.isfile(imageA_path) and os.path.isfile(imageB_path) \
+                            and os.path.isfile(mask_path):
+                        index_list.append((imageA_path, imageB_path, mask_path, area_mask_path, facility, predate, postdate, id))
+
+        self.facilities_list = facilities_list
         return index_list
 
     def _load_raw_index(self, index: int):
@@ -456,6 +471,38 @@ class OMS2CD(NonGeoDataset):
             tile_idx_map[i] = (min_idx, max_idx)
 
         return tile_idx_map
+    
+    def get_facilities(self):
+        """
+        Get a full list of facilities in the dataset.
+        """
+        return list(self.facilities_list)
+
+    def get_facility_tile_indices(self, facility):
+        """
+        For the given facillity name, get all the dataset tile indices for that facility.
+        """
+        indices = []
+        for chip_idx in range(len(self)):
+            file_info = self.get_tile_file(chip_idx)
+            if facility == file_info[-4]:
+                indices.append(chip_idx)
+
+        return indices
+
+    def get_facility_file_indices(self, facility):
+        """
+        For the given facility name, get all the dataset file indices for that facility.
+        """
+        indices = []
+        valid_indices = set(self.chip_index_map.keys())
+        for file_index in range(len(self.file_list)):
+            if facility == self.file_list[file_index][-4] and file_index in valid_indices:
+                indices.append(file_index)
+        return indices
+    
+    def get_file_info(self, file_idx):
+        return self.file_list[file_idx]
 
     def set_transforms(self, transforms):
         self.transforms = transforms

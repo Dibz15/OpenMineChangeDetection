@@ -210,34 +210,34 @@ class CaseStudyDataset(OMS2CD):
 
         return sample
 
-    def get_facility_tile_indices(self, facility):
-        """
-        For the given facillity name, get all the dataset tile indices for that facility.
-        """
-        indices = []
-        for chip_idx in range(len(self)):
-            file_info = self.get_tile_file(chip_idx)
-            if facility == file_info[2]:
-                indices.append(chip_idx)
+    # def get_facility_tile_indices(self, facility):
+    #     """
+    #     For the given facillity name, get all the dataset tile indices for that facility.
+    #     """
+    #     indices = []
+    #     for chip_idx in range(len(self)):
+    #         file_info = self.get_tile_file(chip_idx)
+    #         if facility == file_info[2]:
+    #             indices.append(chip_idx)
 
-        return indices
+    #     return indices
 
-    def get_facility_file_indices(self, facility):
-        """
-        For the given facility name, get all the dataset file indices for that facility.
-        """
-        indices = []
-        valid_indices = set(self.chip_index_map.keys())
-        for file_index in range(len(self.file_list)):
-            if facility == self.file_list[file_index][2] and file_index in valid_indices:
-                indices.append(file_index)
-        return indices
+    # def get_facility_file_indices(self, facility):
+    #     """
+    #     For the given facility name, get all the dataset file indices for that facility.
+    #     """
+    #     indices = []
+    #     valid_indices = set(self.chip_index_map.keys())
+    #     for file_index in range(len(self.file_list)):
+    #         if facility == self.file_list[file_index][2] and file_index in valid_indices:
+    #             indices.append(file_index)
+    #     return indices
 
-    def get_facilities(self):
-        """
-        Get a full list of facilities in the dataset.
-        """
-        return list(self.facilities_list)
+    # def get_facilities(self):
+    #     """
+    #     Get a full list of facilities in the dataset.
+    #     """
+    #     return list(self.facilities_list)
 
     @classmethod
     def GetNormalizeTransform(cls, bands='rgb', device='cpu'):
