@@ -412,7 +412,7 @@ def download_prep_oms2cd(output_dir):
 
     os.makedirs(output_dir)
     if not os.path.isfile(oms2cd_file):
-        assert download_and_verify("https://drive.google.com/uc?export=download&id=1Kyle3U-lHQsj_zo7xO-GQJk_ZX9SmiKG&confirm=t&uuid=1756e9bd-f27e-46a7-a69d-99808107f180&at=AB6BwCAIA-RdbjvQOtJyPzNBDD9S:1691856890025", 
+        assert download_and_verify("https://drive.usercontent.google.com/download?id=1Kyle3U-lHQsj_zo7xO-GQJk_ZX9SmiKG&export=download&authuser=1&confirm=t&uuid=bd2805e6-3d2e-4ae9-a399-74654742448a&at=APZUnTX8msfWBes6cP7mRR_P04c3:1711558306554", 
                                     oms2cd_file, 
                                     good_hash)
     else:
