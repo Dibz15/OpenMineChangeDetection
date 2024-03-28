@@ -61,7 +61,7 @@ import rasterio
 class OMS2CD(NonGeoDataset):
     normalisation_map = {
         "rgb": (torch.tensor([192.9278, 185.3099, 191.5534]), torch.tensor([55.8556, 53.8176, 55.0711])),
-        "rgbnir": (torch.tensor([192.9278, 185.3099, 191.5534, 0]), torch.tensor([55.8556, 53.8176, 55.0711, 0])),
+        "rgbnir": (torch.tensor([192.9281, 185.3099, 191.5535, 200.3148]), torch.tensor([55.8543, 53.8187, 55.0701, 53.1153])),
         "all": (torch.tensor([1571.1372, 1365.5087, 1284.8223, 1298.9539, 1431.2260, 1860.9531,
                     2081.9634, 1994.7665, 2214.5986,  641.4485,   14.3672, 1957.3165,
                     1419.6107]),
@@ -313,7 +313,8 @@ class OMS2CD(NonGeoDataset):
         with rasterio.open(path) as img:
             image = img.read()  # rasterio reads images as (bands, height, width)
             meta = img.meta
-        
+            if self.bands == 'all':
+                image = image.astype(np.int16)
             return image, meta
 
     def _get_full_image_shape(self, file_index):
