@@ -188,7 +188,7 @@ def predict_masks(model, dataset, pred_func, device, threshold=None, output_dir=
         date_range_list = []  # This will store the date ranges for each file index
         for file_index in facility_file_indices:
             file_info = dataset.file_list[file_index]
-            predate, postdate = file_info[3:5]
+            predate, postdate = file_info[-3:-2]
             date_range_list.append(f"{predate} - {postdate}")
 
             if output_dir is not None:
