@@ -400,11 +400,27 @@ def load_lsnet_oms2cd(device):
     """
     return load_lsnet(os.path.join('OpenMineChangeDetection', 'final_weights', 'lsnet_oms2cd.pt'), device)
 
-def download_prep_oms2cd(output_dir):
+def download_prep_oms2cd(output_dir, bands='rgb'):
     import zipfile
     import os
-    good_hash = "c0170a57f4510f00338ee6a1484019c88c66ed3cbaa2840e17ff554f18b0b185"
-    oms2cd_file = os.path.join(output_dir, 'OMS2CD.zip')
+
+    bandFiles = {
+        'rgb': {
+            'hash': "c0170a57f4510f00338ee6a1484019c88c66ed3cbaa2840e17ff554f18b0b185",
+            'url': "https://drive.usercontent.google.com/download?id=1Kyle3U-lHQsj_zo7xO-GQJk_ZX9SmiKG&export=download&authuser=1&confirm=t&uuid=bd2805e6-3d2e-4ae9-a399-74654742448a&at=APZUnTX8msfWBes6cP7mRR_P04c3:1711558306554"
+        },
+        'rgbnir': {
+            'hash': "0bc64f25766b6823b8b113505b991e36add944ffc0b5a4795922173c0e63a49e",
+            'url': "https://drive.usercontent.google.com/download?id=1enaD-xwp0JwyKzkLxMs8UxW72xxx85P_&export=download&authuser=0&confirm=t&uuid=cf963556-6d65-41d6-9969-8b9daefea298&at=APZUnTWjKMzsCkxcyQQsWtWBWM1Z%3A1711639163623"
+        },
+        'all': {
+            'hash': "b8e92aa1265882ea888f95d3f24fadfe1ab804ac907e1e8c2ad9e3595eb045bd",
+            'url': "https://drive.usercontent.google.com/download?id=1m5t2l7zoBBHWZAWUIjU0fGArUkMJY2H6&export=download&authuser=0&confirm=t&uuid=5992cdea-6a68-41ce-95ce-6121a410ca8e&at=APZUnTVmJ1QfzRveRo-pfVNy5qZ6%3A1711639121738"
+        }
+    }
+
+    good_hash = bandFiles[bands]['hash']
+    oms2cd_file = os.path.join(output_dir, f'OMS2CD_{bands}.zip')
 
     if os.path.isdir(output_dir):
         print(f'Output directory {output_dir} already exists. Skipping dataset prep.')
@@ -412,9 +428,7 @@ def download_prep_oms2cd(output_dir):
 
     os.makedirs(output_dir)
     if not os.path.isfile(oms2cd_file):
-        assert download_and_verify("https://drive.usercontent.google.com/download?id=1Kyle3U-lHQsj_zo7xO-GQJk_ZX9SmiKG&export=download&authuser=1&confirm=t&uuid=bd2805e6-3d2e-4ae9-a399-74654742448a&at=APZUnTX8msfWBes6cP7mRR_P04c3:1711558306554", 
-                                    oms2cd_file, 
-                                    good_hash)
+        assert download_and_verify(bandFiles[bands]['url'], oms2cd_file, good_hash)
     else:
         print(f'Archive {oms2cd_file} already downloaded. Skipping.')
 
