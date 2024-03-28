@@ -61,6 +61,7 @@ import rasterio
 class OMS2CD(NonGeoDataset):
     normalisation_map = {
         "rgb": (torch.tensor([192.9278, 185.3099, 191.5534]), torch.tensor([55.8556, 53.8176, 55.0711])),
+        "rgbnir": (torch.tensor([192.9278, 185.3099, 191.5534, 0]), torch.tensor([55.8556, 53.8176, 55.0711, 0])),
         "all": (torch.tensor([1571.1372, 1365.5087, 1284.8223, 1298.9539, 1431.2260, 1860.9531,
                     2081.9634, 1994.7665, 2214.5986,  641.4485,   14.3672, 1957.3165,
                     1419.6107]),
@@ -93,7 +94,7 @@ class OMS2CD(NonGeoDataset):
             - root (str): The root directory where the dataset is stored.
             - split (str, optional): The split of the dataset. Should be one of 'train', 'val', 'test', or 'all'.
                                 Default is 'train'.
-            - bands (str, optional): The bands to use. Should be one of 'rgb' or 'all'. Default is 'rgb'.
+            - bands (str, optional): The bands to use. Should be one of 'rgb', 'rgbnir', or 'all'. Default is 'rgb'.
             - transforms (Optional[Callable[[dict[str, Tensor]], dict[str, Tensor]]], optional): Transformations to be applied
                                                                                                 to the image pairs. Default is None.
             - stride (Union[int, Tuple[int, int], List[int]], optional): The stride used for creating tiles from images.
@@ -108,7 +109,7 @@ class OMS2CD(NonGeoDataset):
             dataset = OMS2CD(root='OMS2CD', split='train', bands='rgb')
             sample = dataset[0]
         """
-        assert bands in ['rgb', 'all']
+        assert bands in ['rgb', 'rgbnir', 'all']
         assert split in ['train', 'val', 'test', 'all']
         
         self.root_dir = root
@@ -512,7 +513,12 @@ class OMS2CD(NonGeoDataset):
         return self.__class__.GetNormalizationValues(self.bands)
 
     def split_images(self, images):
-        n_bands = 3 if self.bands == "rgb" else 13
+        band_nums = {
+            'rgb': 3,
+            'all': 13,
+            'rgbnir': 4
+        }
+        n_bands = band_nums[self.bands]
         pre, post = images[:, 0:n_bands], images[:, n_bands:2*n_bands]
         return pre, post
 
@@ -537,7 +543,13 @@ class OMS2CD(NonGeoDataset):
         """
         ncols = 2
 
-        rgb_inds = [0, 1, 2]
+        inds_map = {
+            'rgb': [0, 1, 2],
+            'rgbnir': [0, 1, 2],
+            'all': [3, 2, 1]
+        }
+
+        rgb_inds = inds_map[self.bands]
 
         def get_masked(img) -> "np.typing.NDArray[np.uint8]":
             rgb_img = img[rgb_inds].float().numpy()
