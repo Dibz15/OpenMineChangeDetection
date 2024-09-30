@@ -448,7 +448,7 @@ class OMS2CD(NonGeoDataset):
             meta['count'] = 1
 
         if not no_tile:
-            x,y = self.get_tile_relative_offset(998)
+            x,y = self.get_tile_relative_offset(tile_idx)
             meta['transform'] = meta['transform'] * Affine.translation(x, y)
             meta['width'] = img_dict['image'].shape[1]
             meta['height'] = img_dict['image'].shape[2]

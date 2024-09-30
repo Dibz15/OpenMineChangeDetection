@@ -43,15 +43,15 @@ from .transforms import NormalizeImageDict
 import numpy as np
 
 class CaseStudyDataset(OMS2CD):
-    def __init__(self, root, stride = 128):
+    def __init__(self, root, stride = 128, tile_mode="constant", tile_size=256):
         super().__init__(
             root,
             "train",
             "rgb",
             None,
-            tile_mode="constant",
+            tile_mode=tile_mode,
             stride = stride,
-            tile_size = 256,
+            tile_size = tile_size,
             load_area_mask = False,
             index_no_mask = True
         )
