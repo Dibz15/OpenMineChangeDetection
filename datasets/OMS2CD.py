@@ -57,6 +57,8 @@ from torchgeo.transforms.transforms import _RandomNCrop
 import torch
 import kornia.augmentation as K
 import rasterio
+from stocaching import SharedCache
+from .utils import SharedObjectCache
 
 class OMS2CD(NonGeoDataset):
     normalisation_map = {
@@ -81,7 +83,9 @@ class OMS2CD(NonGeoDataset):
         tile_size: Union[int, Tuple[int, int], List[int]] = 256,
         tile_mode: str = "drop",
         load_area_mask: bool = False,
-        index_no_mask: bool = True
+        index_no_mask: bool = True, 
+        use_caching:bool = False,
+        cache_size_limit_gib:int = 8
     ) -> None:
         """
         OMS2CD Dataset loader. Extends torchgeo's NonGeoDataset. Dataset is indexed by the tile number. len(dataset) will give the number of tiles in the chosen split, 
@@ -121,6 +125,7 @@ class OMS2CD(NonGeoDataset):
 
         self.file_list = self._build_index()  # using build_index method to build the file list
         self.transforms = transforms
+        self.use_caching = False
 
         if tile_size is None:
             self.no_tile = True
@@ -141,6 +146,33 @@ class OMS2CD(NonGeoDataset):
             self.no_tile = False
 
         self.total_dataset_length, self.chip_index_map, self.image_shapes_map = self._calculate_dataset_len()
+
+        if use_caching:
+            item = self.__getitem__(0)
+            self.img_cache = SharedCache(
+                size_limit_gib=int(cache_size_limit_gib * 0.5),
+                dataset_len=int(self.total_dataset_length),
+                data_dims=item['image'].shape,
+                dtype=torch.float,
+            )
+
+            self.mask_cache = SharedCache(
+                size_limit_gib=int(cache_size_limit_gib * 0.2),
+                dataset_len=int(self.total_dataset_length),
+                data_dims=item['mask'].shape,
+                dtype=torch.uint8,
+            )
+
+            if self.load_area_mask:
+                self.area_mask_cache = SharedCache(
+                    size_limit_gib=int(cache_size_limit_gib * 0.2),
+                    dataset_len=int(self.total_dataset_length),
+                    data_dims=item['mask'].shape,
+                    dtype=torch.uint8,
+                )
+
+            self.meta_cache = SharedObjectCache()
+            self.use_caching = use_caching
 
     def _get_date_str(self, s2_file):
         s2_file_without_ext = s2_file.replace('.tif', '')
@@ -351,51 +383,69 @@ class OMS2CD(NonGeoDataset):
         Returns:
             data and label at that index
         """
+        found_cache = False
+        if self.use_caching:
+            cached_mask_result = self.mask_cache.get_slot(chip_index)
+            if cached_mask_result is not None:
+                cached_img_result = self.img_cache.get_slot(chip_index)
+                cached_meta = self.meta_cache[chip_index]
+                sample = {'image': cached_img_result, 'mask': cached_mask_result, 'meta': cached_meta}
+                if self.load_area_mask:
+                    sample['area_mask'] = self.area_mask_cache.get_slot(chip_index)
+                found_cache = True
 
-        (file_index, relative_chip_index) = self._get_file_index(chip_index)
-        if not self.no_tile:
-            tiler, full_image_shape = self._get_tiler(file_index)
-            if not self.load_area_mask:
-                img1, img2, mask, meta = self._load_raw_index(file_index)
-            else:
-                img1, img2, mask, area_mask, meta = self._load_raw_index(file_index)
-
-            try:
+        if not found_cache:
+            (file_index, relative_chip_index) = self._get_file_index(chip_index)
+            if not self.no_tile:
+                tiler, full_image_shape = self._get_tiler(file_index)
                 if not self.load_area_mask:
-                    img_full = np.concatenate((img1, img2, mask))
+                    img1, img2, mask, meta = self._load_raw_index(file_index)
                 else:
-                    img_full = np.concatenate((img1, img2, mask, area_mask))
-            except ValueError as e:
-                print(e)
-                print(self.file_list[file_index])
+                    img1, img2, mask, area_mask, meta = self._load_raw_index(file_index)
 
-            img_mask_tile = tiler.get_tile(img_full, relative_chip_index, copy_data = False)
+                try:
+                    if not self.load_area_mask:
+                        img_full = np.concatenate((img1, img2, mask))
+                    else:
+                        img_full = np.concatenate((img1, img2, mask, area_mask))
+                except ValueError as e:
+                    print(e)
+                    print(self.file_list[file_index])
 
-            if not self.load_area_mask:
-                img_tile, mask_tile = img_mask_tile[0:full_image_shape[0] - 1, :, :], \
-                                          img_mask_tile[full_image_shape[0] - 1, :, :]
+                img_mask_tile = tiler.get_tile(img_full, relative_chip_index, copy_data = False)
+
+                if not self.load_area_mask:
+                    img_tile, mask_tile = img_mask_tile[0:full_image_shape[0] - 1, :, :], \
+                                            img_mask_tile[full_image_shape[0] - 1, :, :]
+                else:
+                    img_tile, mask_tile, area_mask_tile = img_mask_tile[0:full_image_shape[0] - 2, :, :], \
+                                                            img_mask_tile[full_image_shape[0] - 2, :, :], \
+                                                            img_mask_tile[full_image_shape[0] - 1, :, :]
             else:
-                img_tile, mask_tile, area_mask_tile = img_mask_tile[0:full_image_shape[0] - 2, :, :], \
-                                                          img_mask_tile[full_image_shape[0] - 2, :, :], \
-                                                          img_mask_tile[full_image_shape[0] - 1, :, :]
-        else:
-            if not self.load_area_mask:
-                img1, img2, mask_tile, meta = self._load_raw_index(file_index)
-            else:
-                img1, img2, mask_tile, area_mask_tile, meta = self._load_raw_index(file_index)
-                area_mask_tile = np.squeeze(area_mask_tile, 0)
+                if not self.load_area_mask:
+                    img1, img2, mask_tile, meta = self._load_raw_index(file_index)
+                else:
+                    img1, img2, mask_tile, area_mask_tile, meta = self._load_raw_index(file_index)
+                    area_mask_tile = np.squeeze(area_mask_tile, 0)
+                
+                mask_tile = np.squeeze(mask_tile, 0)
+                img_tile = np.concatenate((img1, img2))
+
+            img_tile_tensor = torch.from_numpy(img_tile).to(torch.float)
+            mask_tile_tensor = torch.from_numpy(mask_tile).to(torch.uint8).unsqueeze(0)
             
-            mask_tile = np.squeeze(mask_tile, 0)
-            img_tile = np.concatenate((img1, img2))
+            if self.load_area_mask:
+                area_mask_tile_tensor = torch.from_numpy(area_mask_tile).to(torch.uint8).unsqueeze(0)
+                sample = {"image": img_tile_tensor, "mask": mask_tile_tensor, 'area_mask': area_mask_tile_tensor, 'meta': meta}
+            else:
+                sample = {"image": img_tile_tensor, "mask": mask_tile_tensor, 'meta': meta}
 
-        img_tile_tensor = torch.from_numpy(img_tile).to(torch.float)
-        mask_tile_tensor = torch.from_numpy(mask_tile).to(torch.uint8).unsqueeze(0)
-        
-        if self.load_area_mask:
-            area_mask_tile_tensor = torch.from_numpy(area_mask_tile).to(torch.uint8).unsqueeze(0)
-            sample = {"image": img_tile_tensor, "mask": mask_tile_tensor, 'area_mask': area_mask_tile_tensor, 'meta': meta}
-        else:
-            sample = {"image": img_tile_tensor, "mask": mask_tile_tensor, 'meta': meta}
+            if self.use_caching:
+                self.img_cache.set_slot(chip_index, sample['image'])
+                self.mask_cache.set_slot(chip_index, sample['mask'])
+                if self.load_area_mask:
+                    self.area_mask_cache.set_slot(chip_index, sample['area_mask'])
+                self.meta_cache[chip_index] = sample['meta']
 
         if self.transforms is not None:
             sample = self.transforms(sample)
@@ -510,13 +560,16 @@ class OMS2CD(NonGeoDataset):
     def get_normalization_values(self):
         return self.__class__.GetNormalizationValues(self.bands)
 
-    def split_images(self, images):
+    def _get_num_channels(self):
         band_nums = {
             'rgb': 3,
             'all': 11,
             'rgbnir': 4
         }
-        n_bands = band_nums[self.bands]
+        return band_nums[self.bands]
+
+    def split_images(self, images):
+        n_bands = self._get_num_channels()
         pre, post = images[:, 0:n_bands], images[:, n_bands:2*n_bands]
         return pre, post
 

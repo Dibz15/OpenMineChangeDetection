@@ -13,6 +13,60 @@ from torchgeo.datasets.utils import draw_semantic_segmentation_masks
 import numpy as np
 import kornia.augmentation as K
 
+import multiprocessing as mp
+
+class SharedObjectCache:
+    """
+    A simple shared memory cache for arbitrary Python objects.
+    This cache is backed by a multiprocessing Manager's dict, allowing
+    it to be shared between multiple processes.
+    """
+
+    def __init__(self):
+        # Create a manager and a dict proxy for sharing the cache across processes
+        self.manager = mp.Manager()
+        self.cache = self.manager.dict()
+
+    def set(self, key, value):
+        """Set a value in the cache for a given key."""
+        self.cache[key] = value
+
+    def get(self, key):
+        """Retrieve a value from the cache for a given key.
+        
+        Returns None if the key is not present.
+        """
+        return self.cache.get(key, None)
+
+    def remove(self, key):
+        """Remove a key from the cache if it exists."""
+        if key in self.cache:
+            del self.cache[key]
+
+    def clear(self):
+        """Clear the entire cache."""
+        self.cache.clear()
+
+    def keys(self):
+        """Return a list of all keys in the cache."""
+        return list(self.cache.keys())
+
+    def __len__(self):
+        """Return the number of items in the cache."""
+        return len(self.cache)
+
+    def __getitem__(self, key):
+        """Enable access using square brackets (e.g., cache[key])."""
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        """Enable setting values using square brackets (e.g., cache[key] = value)."""
+        self.set(key, value)
+
+    def __delitem__(self, key):
+        """Enable deletion of items using square brackets (e.g., del cache[key])."""
+        self.remove(key)
+
 def create_folder_if_not_exists(folder_path):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
