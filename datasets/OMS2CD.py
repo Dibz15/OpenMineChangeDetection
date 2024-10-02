@@ -57,7 +57,7 @@ from torchgeo.transforms.transforms import _RandomNCrop
 import torch
 import kornia.augmentation as K
 import rasterio
-from stocaching import SharedCache
+from .stocaching import SharedCache
 from .utils import SharedObjectCache
 
 class OMS2CD(NonGeoDataset):
